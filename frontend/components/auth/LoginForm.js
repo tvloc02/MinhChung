@@ -223,7 +223,7 @@ export default function LoginPage() {
                                 </p>
                             </form>
 
-                            <div className="mt-8 text-center">
+                            <div className="mt-8 bottom-3 text-center">
                                 <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                                     Made by Ban Đại học số - Trường Đại học CMC
                                 </p>
@@ -254,8 +254,8 @@ export default function LoginPage() {
                                     Hệ thống quản lý minh chứng
                                 </h2>
                                 <p className="text-base opacity-90 leading-relaxed">
-                                    Khám phá lộ trình học được thiết kế riêng cho bạn,<br />
-                                    nhận phản hồi tức thì và làm chủ kiến thức hiệu quả.
+                                    Quản lý, tra cứu và lưu trữ minh chứng<br />
+                                    nhanh chóng, chính xác và tiện lợi.
                                 </p>
                             </div>
 
@@ -268,10 +268,10 @@ export default function LoginPage() {
                                         </div>
                                     </div>
                                     <h3 className="text-base font-semibold mb-1 text-center">
-                                        Lộ trình cá nhân hóa
+                                        Quản lý phân quyền
                                     </h3>
                                     <p className="text-white/80 text-xs leading-relaxed text-center">
-                                        Học theo tốc độ và nhu cầu của bạn
+                                        Thêm, sửa, xóa minh chứng trong phạm vi tiêu chuẩn và tiêu chí được giao
                                     </p>
                                 </div>
 
@@ -282,10 +282,10 @@ export default function LoginPage() {
                                         </div>
                                     </div>
                                     <h3 className="text-base font-semibold mb-1 text-center">
-                                        Phản hồi tức thì
+                                        Cập nhật & phản hồi
                                     </h3>
                                     <p className="text-white/80 text-xs leading-relaxed text-center">
-                                        Nhận xét, gợi ý chi tiết để tiến bộ
+                                        Dễ dàng chỉnh sửa thông tin, cập nhật và theo dõi thay đổi minh chứng
                                     </p>
                                 </div>
 
@@ -296,10 +296,10 @@ export default function LoginPage() {
                                         </div>
                                     </div>
                                     <h3 className="text-base font-semibold mb-1 text-center">
-                                        Học liệu phong phú
+                                        Kho minh chứng
                                     </h3>
                                     <p className="text-white/80 text-xs leading-relaxed text-center">
-                                        Bài giảng, bài tập, video đa dạng
+                                        Hỗ trợ nhập thủ công, tự động, tải file/folder minh chứng đa dạng
                                     </p>
                                 </div>
 
@@ -310,10 +310,10 @@ export default function LoginPage() {
                                         </div>
                                     </div>
                                     <h3 className="text-base font-semibold mb-1 text-center">
-                                        Theo dõi tiến độ
+                                        Theo dõi & tổng hợp
                                     </h3>
                                     <p className="text-white/80 text-xs leading-relaxed text-center">
-                                        Nắm bắt kết quả, điểm mạnh/yếu
+                                        Xem danh sách, tổng hợp minh chứng và xuất báo cáo theo chương trình
                                     </p>
                                 </div>
                             </div>
