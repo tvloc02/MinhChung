@@ -5,7 +5,6 @@ import toast from 'react-hot-toast';
 
 const AuthContext = createContext();
 
-// Configure axios defaults
 if (typeof window !== 'undefined') {
     axios.defaults.baseURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
 }
@@ -36,7 +35,6 @@ export const AuthProvider = ({ children }) => {
         }
     }, []);
 
-    // Set token in axios headers
     useEffect(() => {
         if (token) {
             axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
@@ -45,7 +43,6 @@ export const AuthProvider = ({ children }) => {
         }
     }, [token]);
 
-    // Check if user is authenticated on app start
     useEffect(() => {
         checkAuth();
     }, []);
@@ -100,7 +97,6 @@ export const AuthProvider = ({ children }) => {
             if (response.data.success) {
                 const { token: newToken, user: userData } = response.data.data;
 
-                // Save token to localStorage
                 if (typeof window !== 'undefined') {
                     localStorage.setItem('token', newToken);
                 }
@@ -109,7 +105,6 @@ export const AuthProvider = ({ children }) => {
                 // Set axios header
                 axios.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
 
-                // Set user data
                 setUser(userData);
 
                 toast.success('Đăng nhập thành công!');
