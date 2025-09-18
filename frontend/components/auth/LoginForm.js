@@ -1,5 +1,6 @@
-'use client'
 import { useState } from 'react'
+import { useRouter } from 'next/router'
+import { useAuth } from '../../contexts/AuthContext'
 import {
     Mail,
     Lock,
@@ -11,11 +12,10 @@ import {
     ArrowUpDown,
     FileText,
     BookOpen,
-    TrendingUp,
-    DoorOpen
+    TrendingUp
 } from 'lucide-react'
 
-export default function LoginPage() {
+export default function LoginForm() {
     const [isDarkMode, setIsDarkMode] = useState(false)
     const [showPassword, setShowPassword] = useState(false)
     const [formData, setFormData] = useState({
@@ -25,13 +25,24 @@ export default function LoginPage() {
     const [rememberMe, setRememberMe] = useState(false)
     const [isLoading, setIsLoading] = useState(false)
 
+    const { login } = useAuth()
+    const router = useRouter()
+
     const handleSubmit = async (e) => {
         e.preventDefault()
+        if (!formData.email || !formData.password) {
+            return
+        }
+
         setIsLoading(true)
-        setTimeout(() => {
-            setIsLoading(false)
-            alert('Đăng nhập thành công!')
-        }, 2000)
+
+        const result = await login(formData.email, formData.password)
+
+        if (result.success) {
+            router.push('/dashboard')
+        }
+
+        setIsLoading(false)
     }
 
     const handleInputChange = (e) => {
@@ -48,12 +59,7 @@ export default function LoginPage() {
 
     return (
         <div className={`min-h-screen relative overflow-hidden ${isDarkMode ? 'dark' : ''}`}>
-            <div
-                className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-                style={{
-                    backgroundImage: `url('')`
-                }}
-            />
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800" />
 
             <div className="absolute inset-0 opacity-10">
                 <div className="absolute inset-0" style={{
@@ -64,7 +70,10 @@ export default function LoginPage() {
             </div>
 
             <div className="absolute top-6 left-6 z-50">
-                <button className="flex items-center space-x-2 px-4 py-2 rounded-lg font-medium text-white bg-blue-600/80 hover:bg-blue-700/80 backdrop-blur-sm transition-all duration-200">
+                <button
+                    onClick={() => router.back()}
+                    className="flex items-center space-x-2 px-4 py-2 rounded-lg font-medium text-white bg-blue-600/80 hover:bg-blue-700/80 backdrop-blur-sm transition-all duration-200"
+                >
                     <ArrowLeft className="w-4 h-4" />
                     <span>Quay lại</span>
                 </button>
@@ -72,23 +81,21 @@ export default function LoginPage() {
 
             <div className="relative z-10 min-h-screen flex items-center justify-center p-6">
                 <div className="w-full max-w-5xl mx-auto">
-
                     <div className="grid lg:grid-cols-2 rounded-lg overflow-hidden shadow-2xl backdrop-blur-xl">
-
+                        {/* Login Form */}
                         <div className={`relative p-8 ${
                             isDarkMode
                                 ? 'bg-gray-900/95 border-r border-gray-700/50'
                                 : 'bg-white/95 border-r border-gray-200/50'
                         }`}>
-
                             <div className="mb-8">
                                 <div className="flex items-center space-x-3 mb-6">
-                                    <div className="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center">
-                                        <span className="text-white font-bold text-lg">TDG</span>
+                                    <div className="w-12 h-12 bg-green-600 rounded-lg flex items-center justify-center">
+                                        <span className="text-white font-bold text-lg">V</span>
                                     </div>
                                     <div>
                                         <div className="flex items-center space-x-2">
-                                            <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
+                                            <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
                                                 <div className="w-3 h-3 bg-white rounded-full"></div>
                                             </div>
                                             <span className={`text-sm font-medium ${isDarkMode ? 'text-white' : 'text-gray-600'}`}>CMC UNIVERSITY</span>
@@ -107,17 +114,17 @@ export default function LoginPage() {
                             <form onSubmit={handleSubmit} className="space-y-6">
                                 <div>
                                     <label className={`block text-sm font-medium mb-2 ${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`}>
-                                        EMAIL / ID
+                                        EMAIL / TÊN ĐĂNG NHẬP
                                     </label>
                                     <div className="relative">
                                         <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                                         <input
-                                            type="email"
+                                            type="text"
                                             name="email"
                                             value={formData.email}
                                             onChange={handleInputChange}
-                                            placeholder="Nhập email hoặc ID"
-                                            autoComplete="email"
+                                            placeholder="Nhập email hoặc tên đăng nhập"
+                                            autoComplete="username"
                                             className={`w-full pl-10 pr-4 py-4 text-base rounded-lg border transition-colors ${
                                                 isDarkMode
                                                     ? 'bg-gray-800/50 border-gray-600 text-white placeholder-gray-400 focus:border-blue-400'
@@ -145,7 +152,7 @@ export default function LoginPage() {
                                             value={formData.password}
                                             onChange={handleInputChange}
                                             placeholder="Nhập mật khẩu"
-                                            autoComplete="new-password"
+                                            autoComplete="current-password"
                                             className={`w-full pl-10 pr-12 py-4 text-base rounded-lg border transition-colors ${
                                                 isDarkMode
                                                     ? 'bg-gray-800/50 border-gray-600 text-white placeholder-gray-400 focus:border-blue-400'
@@ -172,7 +179,7 @@ export default function LoginPage() {
                                         className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                                     />
                                     <label htmlFor="remember" className={`ml-2 text-sm ${isDarkMode ? 'text-gray-200' : 'text-gray-600'}`}>
-                                        Ghi nhớ
+                                        Ghi nhớ đăng nhập
                                     </label>
                                 </div>
 
@@ -208,34 +215,28 @@ export default function LoginPage() {
                                         isDarkMode
                                             ? 'bg-gray-800/50 border-gray-600 text-white hover:bg-gray-700/50'
                                             : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
-                                    } flex items-center justify-center space-x-2`}>
+                                    } flex items-center justify-center space-x-2`}
+                                >
                                     <div className="w-5 h-5 bg-blue-500 rounded flex items-center justify-center">
                                         <span className="text-white text-xs font-bold">M</span>
                                     </div>
                                     <span>Đăng nhập với Microsoft</span>
                                 </button>
-
-                                <p className={`text-center text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                                    Chưa có tài khoản?{' '}
-                                    <button type="button" className="text-blue-500 hover:underline font-medium">
-                                        Đăng ký
-                                    </button>
-                                </p>
                             </form>
 
-                            <div className="mt-8 bottom-3 text-center">
+                            <div className="mt-8 text-center">
                                 <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                                     Made by Ban Đại học số - Trường Đại học CMC
                                 </p>
                             </div>
                         </div>
 
+                        {/* Right Side - Features */}
                         <div className={`relative p-8 ${
                             isDarkMode
                                 ? 'bg-gradient-to-br from-purple-900/90 to-blue-900/90'
                                 : 'bg-gradient-to-br from-purple-600 to-blue-600'
                         } text-white`}>
-
                             <div className="absolute top-6 right-6">
                                 <button
                                     onClick={toggleTheme}
@@ -243,7 +244,8 @@ export default function LoginPage() {
                                         isDarkMode
                                             ? 'text-yellow-400 bg-white/10 hover:bg-white/20'
                                             : 'text-white bg-white/20 hover:bg-white/30'
-                                    }`}>
+                                    }`}
+                                >
                                     {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
                                 </button>
                             </div>
@@ -254,13 +256,12 @@ export default function LoginPage() {
                                     Hệ thống quản lý minh chứng
                                 </h2>
                                 <p className="text-base opacity-90 leading-relaxed">
-                                    Quản lý, tra cứu và lưu trữ minh chứng<br />
-                                    nhanh chóng, chính xác và tiện lợi.
+                                    Quản lý, tổ chức và theo dõi tất cả minh chứng<br />
+                                    một cách hiệu quả và chuyên nghiệp.
                                 </p>
                             </div>
 
                             <div className="grid grid-cols-2 gap-4 mb-8">
-                                {/* Lộ trình cá nhân hóa */}
                                 <div className="p-4 bg-white/10 rounded-lg">
                                     <div className="mb-3 flex justify-center">
                                         <div className="bg-white/20 p-2 rounded-md">
@@ -268,10 +269,10 @@ export default function LoginPage() {
                                         </div>
                                     </div>
                                     <h3 className="text-base font-semibold mb-1 text-center">
-                                        Quản lý phân quyền
+                                        Quản lý dễ dàng
                                     </h3>
                                     <p className="text-white/80 text-xs leading-relaxed text-center">
-                                        Thêm, sửa, xóa minh chứng trong phạm vi tiêu chuẩn và tiêu chí được giao
+                                        Thêm, sửa, xóa minh chứng một cách nhanh chóng
                                     </p>
                                 </div>
 
@@ -282,24 +283,24 @@ export default function LoginPage() {
                                         </div>
                                     </div>
                                     <h3 className="text-base font-semibold mb-1 text-center">
-                                        Cập nhật & phản hồi
+                                        Tổ chức khoa học
                                     </h3>
                                     <p className="text-white/80 text-xs leading-relaxed text-center">
-                                        Dễ dàng chỉnh sửa thông tin, cập nhật và theo dõi thay đổi minh chứng
+                                        Phân loại theo tiêu chuẩn và tiêu chí
                                     </p>
                                 </div>
 
                                 <div className="p-4 bg-white/10 rounded-lg">
                                     <div className="mb-3 flex justify-center">
                                         <div className="bg-white/20 p-2 rounded-md">
-                                            <DoorOpen className="w-6 h-6 text-white/80" />
+                                            <BookOpen className="w-6 h-6 text-white/80" />
                                         </div>
                                     </div>
                                     <h3 className="text-base font-semibold mb-1 text-center">
-                                        Kho minh chứng
+                                        Import hàng loạt
                                     </h3>
                                     <p className="text-white/80 text-xs leading-relaxed text-center">
-                                        Hỗ trợ nhập thủ công, tự động, tải file/folder minh chứng đa dạng
+                                        Tải lên nhiều file từ Excel, folder
                                     </p>
                                 </div>
 
@@ -310,10 +311,10 @@ export default function LoginPage() {
                                         </div>
                                     </div>
                                     <h3 className="text-base font-semibold mb-1 text-center">
-                                        Theo dõi & tổng hợp
+                                        Báo cáo chi tiết
                                     </h3>
                                     <p className="text-white/80 text-xs leading-relaxed text-center">
-                                        Xem danh sách, tổng hợp minh chứng và xuất báo cáo theo chương trình
+                                        Xuất báo cáo, thống kê đầy đủ
                                     </p>
                                 </div>
                             </div>

@@ -1,213 +1,138 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { useRouter } from 'next/router';
-import axios from 'axios';
-import toast from 'react-hot-toast';
+import React, { createContext, useContext, useState, useEffect } from 'react'
+import { useRouter } from 'next/router'
+import axios from 'axios'
+import toast from 'react-hot-toast'
 
-const AuthContext = createContext();
+const AuthContext = createContext()
 
 if (typeof window !== 'undefined') {
-    axios.defaults.baseURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
+    axios.defaults.baseURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001'
 }
-axios.defaults.headers.common['Content-Type'] = 'application/json';
+axios.defaults.headers.common['Content-Type'] = 'application/json'
 
 export const useAuth = () => {
-    const context = useContext(AuthContext);
+    const context = useContext(AuthContext)
     if (!context) {
-        throw new Error('useAuth must be used within an AuthProvider');
+        throw new Error('useAuth must be used within an AuthProvider')
     }
-    return context;
-};
+    return context
+}
 
 export const AuthProvider = ({ children }) => {
-    const [user, setUser] = useState(null);
-    const [isLoading, setIsLoading] = useState(true);
-    const [token, setToken] = useState(null);
-    const router = useRouter();
+    const [user, setUser] = useState(null)
+    const [isLoading, setIsLoading] = useState(true)
+    const [token, setToken] = useState(null)
+    const router = useRouter()
 
-    // Initialize token from localStorage
     useEffect(() => {
         if (typeof window !== 'undefined') {
-            const savedToken = localStorage.getItem('token');
+            const savedToken = localStorage.getItem('token')
             if (savedToken) {
-                setToken(savedToken);
-                axios.defaults.headers.common['Authorization'] = `Bearer ${savedToken}`;
+                setToken(savedToken)
+                axios.defaults.headers.common['Authorization'] = `Bearer ${savedToken}`
             }
         }
-    }, []);
+    }, [])
 
     useEffect(() => {
         if (token) {
-            axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+            axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
         } else {
-            delete axios.defaults.headers.common['Authorization'];
+            delete axios.defaults.headers.common['Authorization']
         }
-    }, [token]);
+    }, [token])
 
     useEffect(() => {
-        checkAuth();
-    }, []);
+        checkAuth()
+    }, [])
 
     const checkAuth = async () => {
         if (typeof window === 'undefined') {
-            setIsLoading(false);
-            return;
+            setIsLoading(false)
+            return
         }
 
-        const savedToken = localStorage.getItem('token');
+        const savedToken = localStorage.getItem('token')
         if (!savedToken) {
-            setIsLoading(false);
-            return;
+            setIsLoading(false)
+            return
         }
 
         try {
-            setToken(savedToken);
-            axios.defaults.headers.common['Authorization'] = `Bearer ${savedToken}`;
+            setToken(savedToken)
+            axios.defaults.headers.common['Authorization'] = `Bearer ${savedToken}`
 
-            const response = await axios.get('/api/auth/me');
+            const response = await axios.get('/api/auth/me')
             if (response.data.success) {
-                setUser(response.data.data);
+                setUser(response.data.data)
             } else {
-                // Token is invalid, remove it
-                localStorage.removeItem('token');
-                setToken(null);
-                delete axios.defaults.headers.common['Authorization'];
+                localStorage.removeItem('token')
+                setToken(null)
+                delete axios.defaults.headers.common['Authorization']
             }
         } catch (error) {
-            console.error('Auth check failed:', error);
-            // Token is invalid, remove it
+            console.error('Auth check failed:', error)
             if (typeof window !== 'undefined') {
-                localStorage.removeItem('token');
+                localStorage.removeItem('token')
             }
-            setToken(null);
-            delete axios.defaults.headers.common['Authorization'];
+            setToken(null)
+            delete axios.defaults.headers.common['Authorization']
         } finally {
-            setIsLoading(false);
+            setIsLoading(false)
         }
-    };
+    }
 
     const login = async (email, password) => {
         try {
-            setIsLoading(true);
+            setIsLoading(true)
 
             const response = await axios.post('/api/auth/login', {
                 email,
                 password
-            });
+            })
 
             if (response.data.success) {
-                const { token: newToken, user: userData } = response.data.data;
+                const { token: newToken, user: userData } = response.data.data
 
                 if (typeof window !== 'undefined') {
-                    localStorage.setItem('token', newToken);
+                    localStorage.setItem('token', newToken)
                 }
-                setToken(newToken);
+                setToken(newToken)
+                axios.defaults.headers.common['Authorization'] = `Bearer ${newToken}`
+                setUser(userData)
 
-                // Set axios header
-                axios.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
-
-                setUser(userData);
-
-                toast.success('Đăng nhập thành công!');
-                return { success: true };
+                toast.success('Đăng nhập thành công!')
+                return { success: true }
             } else {
-                toast.error(response.data.message || 'Đăng nhập thất bại');
-                return { success: false, message: response.data.message };
+                toast.error(response.data.message || 'Đăng nhập thất bại')
+                return { success: false, message: response.data.message }
             }
         } catch (error) {
-            console.error('Login error:', error);
-            const errorMessage = error.response?.data?.message || 'Lỗi kết nối mạng';
-            toast.error(errorMessage);
-            return { success: false, message: errorMessage };
+            console.error('Login error:', error)
+            const errorMessage = error.response?.data?.message || 'Lỗi kết nối mạng'
+            toast.error(errorMessage)
+            return { success: false, message: errorMessage }
         } finally {
-            setIsLoading(false);
+            setIsLoading(false)
         }
-    };
+    }
 
     const logout = async () => {
         try {
-            // Call logout API
-            await axios.post('/api/auth/logout');
+            await axios.post('/api/auth/logout')
         } catch (error) {
-            console.error('Logout API error:', error);
+            console.error('Logout API error:', error)
         } finally {
-            // Clear local data regardless of API response
             if (typeof window !== 'undefined') {
-                localStorage.removeItem('token');
+                localStorage.removeItem('token')
             }
-            setToken(null);
-            setUser(null);
-            delete axios.defaults.headers.common['Authorization'];
-            toast.success('Đã đăng xuất');
-            router.push('/login');
+            setToken(null)
+            setUser(null)
+            delete axios.defaults.headers.common['Authorization']
+            toast.success('Đã đăng xuất')
+            router.push('/login')
         }
-    };
-
-    const forgotPassword = async (email) => {
-        try {
-            setIsLoading(true);
-            const response = await axios.post('/api/auth/forgot-password', { email });
-
-            if (response.data.success) {
-                toast.success(response.data.message);
-                return { success: true };
-            } else {
-                toast.error(response.data.message);
-                return { success: false, message: response.data.message };
-            }
-        } catch (error) {
-            const errorMessage = error.response?.data?.message || 'Lỗi kết nối mạng';
-            toast.error(errorMessage);
-            return { success: false, message: errorMessage };
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    const changePassword = async (currentPassword, newPassword) => {
-        try {
-            setIsLoading(true);
-            const response = await axios.post('/api/auth/change-password', {
-                currentPassword,
-                newPassword
-            });
-
-            if (response.data.success) {
-                toast.success(response.data.message);
-                return { success: true };
-            } else {
-                toast.error(response.data.message);
-                return { success: false, message: response.data.message };
-            }
-        } catch (error) {
-            const errorMessage = error.response?.data?.message || 'Lỗi kết nối mạng';
-            toast.error(errorMessage);
-            return { success: false, message: errorMessage };
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    const updateProfile = async (profileData) => {
-        try {
-            setIsLoading(true);
-            const response = await axios.put('/api/auth/profile', profileData);
-
-            if (response.data.success) {
-                setUser(response.data.data);
-                toast.success(response.data.message);
-                return { success: true };
-            } else {
-                toast.error(response.data.message);
-                return { success: false, message: response.data.message };
-            }
-        } catch (error) {
-            const errorMessage = error.response?.data?.message || 'Lỗi kết nối mạng';
-            toast.error(errorMessage);
-            return { success: false, message: errorMessage };
-        } finally {
-            setIsLoading(false);
-        }
-    };
+    }
 
     const value = {
         user,
@@ -215,15 +140,12 @@ export const AuthProvider = ({ children }) => {
         isLoading,
         login,
         logout,
-        forgotPassword,
-        changePassword,
-        updateProfile,
         checkAuth
-    };
+    }
 
     return (
         <AuthContext.Provider value={value}>
             {children}
         </AuthContext.Provider>
-    );
-};
+    )
+}
