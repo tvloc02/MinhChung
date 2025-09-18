@@ -1,6 +1,19 @@
 'use client'
 import { useState } from 'react'
-import { Mail, Lock, Eye, EyeOff, ArrowLeft, Moon, Sun, ArrowUpDown, FileText, BookOpen, TrendingUp } from 'lucide-react'
+import {
+    Mail,
+    Lock,
+    Eye,
+    EyeOff,
+    ArrowLeft,
+    Moon,
+    Sun,
+    ArrowUpDown,
+    FileText,
+    BookOpen,
+    TrendingUp,
+    DoorOpen
+} from 'lucide-react'
 
 export default function LoginPage() {
     const [isDarkMode, setIsDarkMode] = useState(false)
@@ -279,7 +292,7 @@ export default function LoginPage() {
                                 <div className="p-4 bg-white/10 rounded-lg">
                                     <div className="mb-3 flex justify-center">
                                         <div className="bg-white/20 p-2 rounded-md">
-                                            <BookOpen className="w-6 h-6 text-white/80" />
+                                            <DoorOpen className="w-6 h-6 text-white/80" />
                                         </div>
                                     </div>
                                     <h3 className="text-base font-semibold mb-1 text-center">
