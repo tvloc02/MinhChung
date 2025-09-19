@@ -31,7 +31,6 @@ export default function StandardList() {
     const [showFilters, setShowFilters] = useState(false)
     const [expandedPrograms, setExpandedPrograms] = useState(new Set())
 
-    // Modal states
     const [showCreateModal, setShowCreateModal] = useState(false)
     const [showEditModal, setShowEditModal] = useState(false)
     const [showDetailModal, setShowDetailModal] = useState(false)
@@ -39,7 +38,6 @@ export default function StandardList() {
     const [editingStandard, setEditingStandard] = useState(null)
     const [viewingStandard, setViewingStandard] = useState(null)
 
-    // Form state
     const [formData, setFormData] = useState({
         code: '',
         name: '',
@@ -452,7 +450,6 @@ export default function StandardList() {
 
     return (
         <div className="space-y-6">
-            {/* Header */}
             <div className="flex justify-between items-center">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900">Quản lý tiêu chuẩn</h1>
@@ -467,7 +464,6 @@ export default function StandardList() {
                 </button>
             </div>
 
-            {/* Filters */}
             <div className="bg-white rounded-lg shadow p-6">
                 <div className="flex items-center justify-between mb-4">
                     <h3 className="text-lg font-medium text-gray-900">Tìm kiếm và lọc</h3>
@@ -513,7 +509,6 @@ export default function StandardList() {
                 </div>
             </div>
 
-            {/* Standards List */}
             <div className="bg-white rounded-lg shadow">
                 <div className="px-6 py-4 border-b border-gray-200">
                     <h3 className="text-lg font-medium text-gray-900">
@@ -673,7 +668,6 @@ export default function StandardList() {
                 )}
             </div>
 
-            {/* Create Modal */}
             <Modal
                 isOpen={showCreateModal}
                 onClose={() => setShowCreateModal(false)}
@@ -683,7 +677,6 @@ export default function StandardList() {
                 <StandardForm />
             </Modal>
 
-            {/* Edit Modal */}
             <Modal
                 isOpen={showEditModal}
                 onClose={() => setShowEditModal(false)}
@@ -693,7 +686,6 @@ export default function StandardList() {
                 <StandardForm isEdit={true} />
             </Modal>
 
-            {/* Detail Modal */}
             <Modal
                 isOpen={showDetailModal}
                 onClose={() => setShowDetailModal(false)}
@@ -765,7 +757,6 @@ export default function StandardList() {
                 )}
             </Modal>
 
-            {/* Delete Confirmation */}
             <ConfirmModal
                 isOpen={deleteModal.show}
                 onClose={() => setDeleteModal({ show: false, standardId: null })}

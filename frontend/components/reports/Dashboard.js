@@ -26,7 +26,6 @@ export default function Dashboard() {
     const [loading, setLoading] = useState(true)
 
     useEffect(() => {
-        // Simulate API call
         setTimeout(() => {
             setStats({
                 total: 0,

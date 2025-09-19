@@ -20,7 +20,6 @@ export default function StatisticsChart({ stats }) {
             <div className="text-center mb-6">
                 <div className="w-40 h-40 mx-auto mb-4 relative">
                     <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
-                        {/* Background circle */}
                         <path
                             d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
                             fill="none"

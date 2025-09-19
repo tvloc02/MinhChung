@@ -3,7 +3,6 @@ import { getLocalStorage, setLocalStorage } from '../utils/helpers'
 
 const AppContext = createContext()
 
-// Action types
 export const APP_ACTIONS = {
     SET_THEME: 'SET_THEME',
     SET_SIDEBAR_COLLAPSED: 'SET_SIDEBAR_COLLAPSED',
@@ -21,7 +20,6 @@ export const APP_ACTIONS = {
     SET_STATISTICS: 'SET_STATISTICS'
 }
 
-// Initial state
 const initialState = {
     theme: 'light',
     sidebarCollapsed: false,
@@ -54,7 +52,6 @@ const initialState = {
     }
 }
 
-// Reducer function
 const appReducer = (state, action) => {
     switch (action.type) {
         case APP_ACTIONS.SET_THEME:
@@ -165,7 +162,6 @@ const appReducer = (state, action) => {
     }
 }
 
-// Custom hook to use app context
 export const useApp = () => {
     const context = useContext(AppContext)
     if (!context) {
@@ -174,11 +170,9 @@ export const useApp = () => {
     return context
 }
 
-// Provider component
 export const AppProvider = ({ children }) => {
     const [state, dispatch] = useReducer(appReducer, initialState)
 
-    // Load initial state from localStorage
     useEffect(() => {
         const savedTheme = getLocalStorage('theme', 'light')
         const savedSidebarCollapsed = getLocalStorage('sidebarCollapsed', false)
@@ -194,7 +188,6 @@ export const AppProvider = ({ children }) => {
         })
     }, [])
 
-    // Save theme to localStorage when it changes
     useEffect(() => {
         setLocalStorage('theme', state.theme)
         if (state.theme === 'dark') {
@@ -204,7 +197,6 @@ export const AppProvider = ({ children }) => {
         }
     }, [state.theme])
 
-    // Save other preferences to localStorage
     useEffect(() => {
         setLocalStorage('sidebarCollapsed', state.sidebarCollapsed)
     }, [state.sidebarCollapsed])
@@ -217,7 +209,6 @@ export const AppProvider = ({ children }) => {
         setLocalStorage('preferences', state.preferences)
     }, [state.preferences])
 
-    // Action creators
     const actions = {
         setTheme: (theme) => {
             dispatch({ type: APP_ACTIONS.SET_THEME, payload: theme })
@@ -242,7 +233,6 @@ export const AppProvider = ({ children }) => {
 
         setPageTitle: (title) => {
             dispatch({ type: APP_ACTIONS.SET_PAGE_TITLE, payload: title })
-            // Also update document title
             if (typeof window !== 'undefined') {
                 document.title = title ? `${title} - Hệ thống quản lý minh chứng` : 'Hệ thống quản lý minh chứng'
             }
@@ -315,7 +305,6 @@ export const AppProvider = ({ children }) => {
         }
     }
 
-    // Helper functions
     const helpers = {
         getFilter: (type) => state.filters[type] || {},
 

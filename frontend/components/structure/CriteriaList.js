@@ -30,13 +30,11 @@ export default function CriteriaList() {
     const [showFilters, setShowFilters] = useState(false)
     const [expandedStandards, setExpandedStandards] = useState(new Set())
 
-    // Modal states
     const [showCreateModal, setShowCreateModal] = useState(false)
     const [showEditModal, setShowEditModal] = useState(false)
     const [deleteModal, setDeleteModal] = useState({ show: false, criteriaId: null })
     const [editingCriteria, setEditingCriteria] = useState(null)
 
-    // Form state
     const [formData, setFormData] = useState({
         code: '',
         name: '',

@@ -121,18 +121,15 @@ export const AuthProvider = ({ children }) => {
             let errorMessage = 'Lỗi kết nối mạng'
 
             if (error.response) {
-                // Server responded with error status
                 errorMessage = error.response.data.message || `Lỗi ${error.response.status}`
                 console.error('Response error:', {
                     status: error.response.status,
                     data: error.response.data
                 })
             } else if (error.request) {
-                // Request was made but no response
                 errorMessage = 'Không thể kết nối đến máy chủ. Kiểm tra backend có đang chạy không?'
                 console.error('Network error:', error.message)
             } else {
-                // Something else happened
                 errorMessage = error.message
                 console.error('General error:', error.message)
             }

@@ -477,7 +477,6 @@ export default function OrganizationsList() {
                 </div>
             </div>
 
-            {/* Contact Information */}
             <div className="border-t border-gray-200 pt-4">
                 <h4 className="text-lg font-medium text-gray-900 mb-3">Thông tin liên hệ</h4>
 
@@ -569,7 +568,6 @@ export default function OrganizationsList() {
 
     return (
         <div className="space-y-6">
-            {/* Header */}
             <div className="flex justify-between items-center">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900">Quản lý tổ chức</h1>
@@ -587,7 +585,6 @@ export default function OrganizationsList() {
                 </button>
             </div>
 
-            {/* Search */}
             <div className="bg-white rounded-lg shadow p-6">
                 <div className="relative">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -601,7 +598,6 @@ export default function OrganizationsList() {
                 </div>
             </div>
 
-            {/* Organizations List */}
             <div className="bg-white rounded-lg shadow">
                 <div className="px-6 py-4 border-b border-gray-200">
                     <h3 className="text-lg font-medium text-gray-900">

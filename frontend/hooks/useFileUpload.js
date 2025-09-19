@@ -51,7 +51,6 @@ const useFileUpload = (options = {}) => {
         return errors
     }, [maxSize, allowedTypes])
 
-    // Add files to the list
     const addFiles = useCallback((newFiles) => {
         const fileArray = Array.from(newFiles)
         const validatedFiles = []
@@ -97,7 +96,6 @@ const useFileUpload = (options = {}) => {
         return validatedFiles
     }, [validateFile, multiple, autoUpload])
 
-    // Remove file from list
     const removeFile = useCallback((fileId) => {
         setFiles(prev => prev.filter(f => f.id !== fileId))
         setUploadProgress(prev => {
@@ -108,7 +106,6 @@ const useFileUpload = (options = {}) => {
         setErrors(prev => prev.filter(error => !error.includes(fileId)))
     }, [])
 
-    // Clear all files
     const clearFiles = useCallback(() => {
         setFiles([])
         setUploadProgress({})
@@ -116,7 +113,6 @@ const useFileUpload = (options = {}) => {
         setErrors([])
     }, [])
 
-    // Upload single file
     const uploadFile = useCallback(async (fileData) => {
         const formData = new FormData()
         formData.append('file', fileData.file)
@@ -188,7 +184,6 @@ const useFileUpload = (options = {}) => {
         }
     }, [onProgress, onUploadSuccess, onUploadError])
 
-    // Upload multiple files
     const uploadFiles = useCallback(async (filesToUpload = null) => {
         const targetFiles = filesToUpload || files.filter(f => f.status === 'pending')
 
@@ -220,7 +215,6 @@ const useFileUpload = (options = {}) => {
         }
     }, [files, uploadFile])
 
-    // Retry failed uploads
     const retryFailedUploads = useCallback(async () => {
         const failedFiles = files.filter(f => f.status === 'error')
 
@@ -229,7 +223,6 @@ const useFileUpload = (options = {}) => {
             return []
         }
 
-        // Reset failed files to pending
         setFiles(prev =>
             prev.map(f =>
                 f.status === 'error'
@@ -241,17 +234,14 @@ const useFileUpload = (options = {}) => {
         return await uploadFiles(failedFiles)
     }, [files, uploadFiles])
 
-    // Get file by ID
     const getFile = useCallback((fileId) => {
         return files.find(f => f.id === fileId)
     }, [files])
 
-    // Get files by status
     const getFilesByStatus = useCallback((status) => {
         return files.filter(f => f.status === status)
     }, [files])
 
-    // Calculate statistics
     const stats = {
         total: files.length,
         pending: files.filter(f => f.status === 'pending').length,
@@ -262,7 +252,6 @@ const useFileUpload = (options = {}) => {
         uploadedSize: uploadedFiles.reduce((total, f) => total + f.size, 0)
     }
 
-    // Create file input props
     const getInputProps = useCallback(() => ({
         type: 'file',
         multiple,
@@ -270,13 +259,11 @@ const useFileUpload = (options = {}) => {
         onChange: (e) => {
             if (e.target.files && e.target.files.length > 0) {
                 addFiles(e.target.files)
-                // Reset input value to allow re-selecting the same file
                 e.target.value = ''
             }
         }
     }), [multiple, allowedTypes, addFiles])
 
-    // Create drag and drop handlers
     const getDragProps = useCallback(() => ({
         onDragOver: (e) => {
             e.preventDefault()
@@ -302,7 +289,6 @@ const useFileUpload = (options = {}) => {
     }), [addFiles])
 
     return {
-        // State
         files,
         uploading,
         uploadProgress,
@@ -310,7 +296,6 @@ const useFileUpload = (options = {}) => {
         errors,
         stats,
 
-        // Actions
         addFiles,
         removeFile,
         clearFiles,
@@ -318,15 +303,12 @@ const useFileUpload = (options = {}) => {
         uploadFile,
         retryFailedUploads,
 
-        // Getters
         getFile,
         getFilesByStatus,
 
-        // Props helpers
         getInputProps,
         getDragProps,
 
-        // Utilities
         validateFile,
         formatBytes: (bytes) => formatBytes(bytes)
     }

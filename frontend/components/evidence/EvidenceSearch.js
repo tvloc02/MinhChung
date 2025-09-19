@@ -16,7 +16,6 @@ export default function EvidenceSearch({ onSearch, defaultFilters = {}, classNam
         ...defaultFilters
     })
 
-    // Mock data - replace with actual API calls
     const [programs] = useState([
         { id: 'prog1', name: 'Chương trình đánh giá chất lượng giáo dục' },
         { id: 'prog2', name: 'Chương trình kiểm định chất lượng' }
@@ -46,7 +45,6 @@ export default function EvidenceSearch({ onSearch, defaultFilters = {}, classNam
         { value: 'rejected', label: 'Từ chối' }
     ]
 
-    // Debounced search function
     const debouncedSearch = debounce((query, currentFilters) => {
         onSearch?.(query, currentFilters)
     }, 500)
@@ -140,7 +138,6 @@ export default function EvidenceSearch({ onSearch, defaultFilters = {}, classNam
                 </div>
             </form>
 
-            {/* Advanced Filters */}
             {showAdvanced && (
                 <div className="bg-gray-50 rounded-lg p-4 space-y-4">
                     <div className="flex items-center justify-between">
@@ -156,7 +153,6 @@ export default function EvidenceSearch({ onSearch, defaultFilters = {}, classNam
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {/* Program Filter */}
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
                                 Chương trình đánh giá
@@ -175,7 +171,6 @@ export default function EvidenceSearch({ onSearch, defaultFilters = {}, classNam
                             </select>
                         </div>
 
-                        {/* Organization Filter */}
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
                                 Tổ chức
@@ -194,7 +189,6 @@ export default function EvidenceSearch({ onSearch, defaultFilters = {}, classNam
                             </select>
                         </div>
 
-                        {/* Status Filter */}
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
                                 Trạng thái
@@ -213,7 +207,6 @@ export default function EvidenceSearch({ onSearch, defaultFilters = {}, classNam
                             </select>
                         </div>
 
-                        {/* Standard Filter */}
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
                                 Tiêu chuẩn
@@ -238,7 +231,6 @@ export default function EvidenceSearch({ onSearch, defaultFilters = {}, classNam
                             </select>
                         </div>
 
-                        {/* Criteria Filter */}
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
                                 Tiêu chí
@@ -261,7 +253,6 @@ export default function EvidenceSearch({ onSearch, defaultFilters = {}, classNam
                         </div>
                     </div>
 
-                    {/* Date Range */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -297,7 +288,6 @@ export default function EvidenceSearch({ onSearch, defaultFilters = {}, classNam
                 </div>
             )}
 
-            {/* Active Filters Display */}
             {getActiveFiltersCount() > 0 && (
                 <div className="flex flex-wrap gap-2">
                     <span className="text-sm text-gray-600">Bộ lọc đang áp dụng:</span>

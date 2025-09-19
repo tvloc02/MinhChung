@@ -33,7 +33,6 @@ export default function EvidenceTree() {
 
     const fetchPrograms = async () => {
         try {
-            // Mock data - replace with actual API call
             setPrograms([
                 { id: 'prog1', name: 'Chương trình đánh giá chất lượng giáo dục' },
                 { id: 'prog2', name: 'Chương trình kiểm định chất lượng' }
@@ -46,7 +45,6 @@ export default function EvidenceTree() {
     const fetchTreeData = async () => {
         try {
             setLoading(true)
-            // Mock data - replace with actual API call
             const mockTreeData = {
                 id: 'root',
                 name: 'Minh chứng',
@@ -118,7 +116,6 @@ export default function EvidenceTree() {
             }
 
             setTreeData(mockTreeData)
-            // Auto expand first level
             setExpandedNodes(new Set(['root', 'std1', 'std2']))
         } catch (error) {
             toast.error('Lỗi tải cây minh chứng')
@@ -140,13 +137,11 @@ export default function EvidenceTree() {
     }
 
     const handleDownloadFile = (file, evidenceCode) => {
-        // Implementation for file download
         console.log('Download file:', file, evidenceCode)
         toast.success(`Đang tải xuống ${file.name}`)
     }
 
     const handleViewFile = (file, evidenceCode) => {
-        // Implementation for file view
         console.log('View file:', file, evidenceCode)
     }
 
@@ -155,7 +150,6 @@ export default function EvidenceTree() {
             toast.error('Vui lòng chọn chương trình và tổ chức')
             return
         }
-        // Implementation for download all
         console.log('Download all for program:', selectedProgram, 'organization:', selectedOrganization)
         toast.success('Đang chuẩn bị file tải xuống...')
     }
@@ -165,7 +159,6 @@ export default function EvidenceTree() {
         const isExpanded = expandedNodes.has(node.id)
         const paddingLeft = level * 24
 
-        // Filter by search query
         if (searchQuery) {
             const matchesSearch = node.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 (node.code && node.code.toLowerCase().includes(searchQuery.toLowerCase()))
@@ -234,7 +227,6 @@ export default function EvidenceTree() {
                     )}
                 </div>
 
-                {/* Files for evidence nodes */}
                 {node.type === 'evidence' && node.files && isExpanded && (
                     <div style={{ paddingLeft: `${paddingLeft + 48}px` }}>
                         {node.files.map(file => (
@@ -263,7 +255,6 @@ export default function EvidenceTree() {
                     </div>
                 )}
 
-                {/* Render children */}
                 {hasChildren && isExpanded && (
                     <div>
                         {node.children.map(child => renderTreeNode(child, level + 1))}
@@ -275,10 +266,8 @@ export default function EvidenceTree() {
 
     return (
         <div className="space-y-6">
-            {/* Controls */}
             <div className="bg-white rounded-lg shadow p-6">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                    {/* Program Selection */}
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                             Chương trình đánh giá
@@ -297,7 +286,6 @@ export default function EvidenceTree() {
                         </select>
                     </div>
 
-                    {/* Organization Selection */}
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                             Tổ chức - Cấp đánh giá
@@ -314,7 +302,6 @@ export default function EvidenceTree() {
                         </select>
                     </div>
 
-                    {/* Download All Button */}
                     <div className="flex items-end">
                         <button
                             onClick={handleDownloadAll}
@@ -327,7 +314,6 @@ export default function EvidenceTree() {
                     </div>
                 </div>
 
-                {/* Search */}
                 <div className="relative">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                     <input
@@ -340,7 +326,6 @@ export default function EvidenceTree() {
                 </div>
             </div>
 
-            {/* Tree View */}
             <div className="bg-white rounded-lg shadow">
                 <div className="p-4 border-b border-gray-200">
                     <div className="flex items-center justify-between">
@@ -392,7 +377,6 @@ export default function EvidenceTree() {
                 </div>
             </div>
 
-            {/* Statistics */}
             {treeData && (
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="bg-white rounded-lg shadow p-4">

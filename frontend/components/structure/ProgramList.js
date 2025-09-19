@@ -91,7 +91,6 @@ export default function ProgramList() {
                 search: searchQuery
             }
 
-            // Mock data - replace with actual API call
             await new Promise(resolve => setTimeout(resolve, 500))
 
             const mockData = {
@@ -566,7 +565,6 @@ export default function ProgramList() {
                 </button>
             </div>
 
-            {/* Search */}
             <div className="bg-white rounded-lg shadow p-6">
                 <div className="relative">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -580,7 +578,6 @@ export default function ProgramList() {
                 </div>
             </div>
 
-            {/* Programs List */}
             <div className="bg-white rounded-lg shadow">
                 <div className="px-6 py-4 border-b border-gray-200">
                     <h3 className="text-lg font-medium text-gray-900">
@@ -733,7 +730,6 @@ export default function ProgramList() {
                 )}
             </div>
 
-            {/* Create Modal */}
             <Modal
                 isOpen={showCreateModal}
                 onClose={() => setShowCreateModal(false)}
@@ -743,7 +739,6 @@ export default function ProgramList() {
                 <ProgramForm />
             </Modal>
 
-            {/* Edit Modal */}
             <Modal
                 isOpen={showEditModal}
                 onClose={() => setShowEditModal(false)}
@@ -753,7 +748,6 @@ export default function ProgramList() {
                 <ProgramForm isEdit={true} />
             </Modal>
 
-            {/* Detail Modal */}
             <Modal
                 isOpen={showDetailModal}
                 onClose={() => setShowDetailModal(false)}
