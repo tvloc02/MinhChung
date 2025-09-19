@@ -58,52 +58,52 @@ export default function ReportsPage() {
             // Mock data
             const mockStatistics = {
                 overview: {
-                    totalEvidences: 1247,
-                    totalPrograms: 5,
-                    totalStandards: 48,
-                    totalCriteria: 156,
-                    totalUsers: 45,
-                    totalOrganizations: 12
+                    totalEvidences: 0,
+                    totalPrograms: 0,
+                    totalStandards: 0,
+                    totalCriteria: 0,
+                    totalUsers: 0,
+                    totalOrganizations: 0
                 },
                 evidenceStats: {
-                    approved: 892,
-                    pending: 234,
-                    rejected: 89,
-                    draft: 32,
+                    approved: 0,
+                    pending: 0,
+                    rejected: 0,
+                    draft: 0,
                     byMonth: [
-                        { month: '01/2024', count: 45 },
-                        { month: '02/2024', count: 67 },
-                        { month: '03/2024', count: 89 },
-                        { month: '04/2024', count: 123 },
-                        { month: '05/2024', count: 156 },
-                        { month: '06/2024', count: 134 }
+                        { month: '', count: 0 },
+                        { month: '', count: 0 },
+                        { month: '', count: 0 },
+                        { month: '', count: 0 },
+                        { month: '', count: 0 },
+                        { month: '', count: 0 }
                     ]
                 },
                 programStats: [
-                    { name: 'AUN-QA 2023', evidences: 567, completion: 78 },
-                    { name: 'MOET 2024', evidences: 234, completion: 56 },
-                    { name: 'ISO 9001', evidences: 189, completion: 89 },
-                    { name: 'ABET', evidences: 156, completion: 34 },
-                    { name: 'Internal QA', evidences: 101, completion: 67 }
+                    { name: '', evidences: 0, completion: 0 },
+                    { name: '', evidences: 0, completion: 0 },
+                    { name: '', evidences: 0, completion: 0 },
+                    { name: '', evidences: 0, completion: 0 },
+                    { name: '', evidences: 0, completion: 0 }
                 ],
                 userActivity: [
-                    { name: 'Nguyễn Văn A', evidences: 45, role: 'Manager' },
-                    { name: 'Trần Thị B', evidences: 38, role: 'Staff' },
-                    { name: 'Lê Văn C', evidences: 32, role: 'Staff' },
-                    { name: 'Phạm Thị D', evidences: 28, role: 'Viewer' },
-                    { name: 'Hoàng Văn E', evidences: 24, role: 'Staff' }
+                    { name: '', evidences: 0, role: '' },
+                    { name: '', evidences: 0, role: '' },
+                    { name: '', evidences: 0, role: '' },
+                    { name: '', evidences: 0, role: '' },
+                    { name: '', evidences: 0, role: '' }
                 ],
                 recentActivities: [
-                    { type: 'create', user: 'Nguyễn Văn A', action: 'Tạo minh chứng H1.01.02.15', time: '2024-12-25T10:30:00Z' },
-                    { type: 'approve', user: 'Trần Thị B', action: 'Phê duyệt minh chứng H1.01.02.14', time: '2024-12-25T09:15:00Z' },
-                    { type: 'update', user: 'Lê Văn C', action: 'Cập nhật tiêu chí TC1.2', time: '2024-12-25T08:45:00Z' },
-                    { type: 'reject', user: 'Phạm Thị D', action: 'Từ chối minh chứng H1.01.02.13', time: '2024-12-24T16:20:00Z' }
+                    { type: '', user: '', action: '', time: '' },
+                    { type: '', user: '', action: '', time: '' },
+                    { type: '', user: '', action: '', time: '' },
+                    { type: '', user: '', action: '', time: '' }
                 ]
             }
 
             const mockPrograms = [
-                { id: '1', name: 'Chương trình đánh giá chất lượng AUN-QA 2023' },
-                { id: '2', name: 'Chương trình kiểm định chất lượng Bộ GD&ĐT 2024' }
+                { id: '', name: '' },
+                { id: '', name: '' }
             ]
 
             setStatistics(mockStatistics)
