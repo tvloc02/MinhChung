@@ -29,17 +29,17 @@ export default function Dashboard() {
         // Simulate API call
         setTimeout(() => {
             setStats({
-                total: 1234,
-                approved: 856,
-                pending: 234,
-                rejected: 144
+                total: 0,
+                approved: 0,
+                pending: 0,
+                rejected: 0
             })
 
             setRecentActivities([
-                { id: 1, action: 'Thêm minh chứng mới', code: 'H1.01.02.04', time: '2 giờ trước', type: 'add' },
-                { id: 2, action: 'Phê duyệt minh chứng', code: 'H1.02.01.15', time: '4 giờ trước', type: 'approve' },
-                { id: 3, action: 'Cập nhật minh chứng', code: 'H2.01.03.08', time: '6 giờ trước', type: 'edit' },
-                { id: 4, action: 'Từ chối minh chứng', code: 'H1.03.02.12', time: '8 giờ trước', type: 'reject' }
+                { id: 1, action: 'Thêm minh chứng mới', code: '', time: '', type: 'add' },
+                { id: 2, action: 'Phê duyệt minh chứng', code: '', time: '', type: 'approve' },
+                { id: 3, action: 'Cập nhật minh chứng', code: '', time: '', type: 'edit' },
+                { id: 4, action: 'Từ chối minh chứng', code: '', time: '', type: 'reject' }
             ])
 
             setLoading(false)
@@ -47,10 +47,10 @@ export default function Dashboard() {
     }, [])
 
     const statsCards = [
-        { title: 'Tổng minh chứng', value: stats.total, icon: FileText, color: 'bg-blue-500', change: '+12%' },
-        { title: 'Đã phê duyệt', value: stats.approved, icon: CheckCircle, color: 'bg-green-500', change: '+8%' },
-        { title: 'Chờ xử lý', value: stats.pending, icon: Clock, color: 'bg-yellow-500', change: '+15%' },
-        { title: 'Từ chối', value: stats.rejected, icon: XCircle, color: 'bg-red-500', change: '-3%' }
+        { title: 'Tổng minh chứng', value: stats.total, icon: FileText, color: 'bg-blue-500', change: '' },
+        { title: 'Đã phê duyệt', value: stats.approved, icon: CheckCircle, color: 'bg-green-500', change: '' },
+        { title: 'Chờ xử lý', value: stats.pending, icon: Clock, color: 'bg-yellow-500', change: '' },
+        { title: 'Từ chối', value: stats.rejected, icon: XCircle, color: 'bg-red-500', change: '' }
     ]
 
     const quickActions = [

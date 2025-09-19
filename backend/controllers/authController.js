@@ -20,9 +20,8 @@ const login = async (req, res) => {
             });
         }
 
-        const user = await User.findByEmail(email)
-            .populate('standardAccess', 'name code')
-            .populate('criteriaAccess', 'name code');
+        // ✅ LOẠI BỎ HOÀN TOÀN .populate()
+        const user = await User.findByEmail(email);
 
         if (!user) {
             return res.status(401).json({

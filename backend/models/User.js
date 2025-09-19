@@ -136,10 +136,7 @@ userSchema.statics.generateDefaultPassword = function(email) {
 
 userSchema.statics.findByEmail = function(emailInput) {
     const username = emailInput.split('@')[0].toLowerCase();
-
-    return this.findOne({
-        email: { $in: [username, new RegExp(`^${username}`, 'i')] }
-    });
+    return this.findOne({ email: username });
 };
 
 module.exports = mongoose.model('User', userSchema);
