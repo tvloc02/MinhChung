@@ -6,7 +6,7 @@ import toast from 'react-hot-toast'
 const AuthContext = createContext()
 
 if (typeof window !== 'undefined') {
-    axios.defaults.baseURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001'
+    axios.defaults.baseURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
 }
 axios.defaults.headers.common['Content-Type'] = 'application/json'
 
@@ -86,10 +86,18 @@ export const AuthProvider = ({ children }) => {
         try {
             setIsLoading(true)
 
+            console.log('🔄 Attempting login:', {
+                url: `${axios.defaults.baseURL}/api/auth/login`,
+                email,
+                timestamp: new Date().toISOString()
+            })
+
             const response = await axios.post('/api/auth/login', {
                 email,
                 password
             })
+
+            console.log('📡 Login response:', response.data)
 
             if (response.data.success) {
                 const { token: newToken, user: userData } = response.data.data
@@ -108,8 +116,27 @@ export const AuthProvider = ({ children }) => {
                 return { success: false, message: response.data.message }
             }
         } catch (error) {
-            console.error('Login error:', error)
-            const errorMessage = error.response?.data?.message || 'Lỗi kết nối mạng'
+            console.error('❌ Login error:', error)
+
+            let errorMessage = 'Lỗi kết nối mạng'
+
+            if (error.response) {
+                // Server responded with error status
+                errorMessage = error.response.data.message || `Lỗi ${error.response.status}`
+                console.error('Response error:', {
+                    status: error.response.status,
+                    data: error.response.data
+                })
+            } else if (error.request) {
+                // Request was made but no response
+                errorMessage = 'Không thể kết nối đến máy chủ. Kiểm tra backend có đang chạy không?'
+                console.error('Network error:', error.message)
+            } else {
+                // Something else happened
+                errorMessage = error.message
+                console.error('General error:', error.message)
+            }
+
             toast.error(errorMessage)
             return { success: false, message: errorMessage }
         } finally {

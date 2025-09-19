@@ -1,3 +1,4 @@
+// File: backend/models/Program.js
 const mongoose = require('mongoose');
 
 const programSchema = new mongoose.Schema({
@@ -161,4 +162,4 @@ programSchema.statics.getStatistics = async function() {
 programSchema.set('toJSON', { virtuals: true });
 programSchema.set('toObject', { virtuals: true });
 
-const Program = mongoose.model('Program', programSchema);
+module.exports = mongoose.model('Program', programSchema);
