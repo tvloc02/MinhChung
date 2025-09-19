@@ -90,12 +90,12 @@ export default function LoginForm() {
                         }`}>
                             <div className="mb-8">
                                 <div className="flex items-center space-x-3 mb-6">
-                                    <div className="w-12 h-12 bg-green-600 rounded-lg flex items-center justify-center">
+                                    <div className="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center">
                                         <span className="text-white font-bold text-lg">V</span>
                                     </div>
                                     <div>
                                         <div className="flex items-center space-x-2">
-                                            <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
+                                            <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
                                                 <div className="w-3 h-3 bg-white rounded-full"></div>
                                             </div>
                                             <span className={`text-sm font-medium ${isDarkMode ? 'text-white' : 'text-gray-600'}`}>CMC UNIVERSITY</span>
@@ -206,7 +206,7 @@ export default function LoginForm() {
                                 </button>
 
                                 <div className="text-center">
-                                    <span className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}> HOẶC </span>
+                                    <span className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}> - HOẶC - </span>
                                 </div>
 
                                 <button
