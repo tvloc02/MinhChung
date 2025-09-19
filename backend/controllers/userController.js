@@ -108,8 +108,7 @@ const createUser = async (req, res) => {
             criteriaAccess
         } = req.body;
 
-        // Clean email (remove domain if provided)
-        const cleanEmail = email.replace('@vnua.edu.vn', '').toLowerCase();
+        const cleanEmail = email.replace('@cmcu.edu.vn', '').toLowerCase();
 
         const existingUser = await User.findOne({
             email: new RegExp(`^${cleanEmail}`, 'i')
@@ -122,7 +121,6 @@ const createUser = async (req, res) => {
             });
         }
 
-        // Generate default password
         const defaultPassword = User.generateDefaultPassword(cleanEmail);
 
         const user = new User({
@@ -179,7 +177,6 @@ const updateUser = async (req, res) => {
             });
         }
 
-        // Update allowed fields
         const allowedFields = ['fullName', 'phoneNumber', 'role', 'department', 'position'];
         allowedFields.forEach(field => {
             if (updateData[field] !== undefined) {

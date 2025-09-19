@@ -1,6 +1,5 @@
 const { Standard, Program, Organization } = require('../models/Program');
 
-// Get standards with filters
 const getStandards = async (req, res) => {
     try {
         const {
@@ -69,7 +68,6 @@ const getStandards = async (req, res) => {
     }
 };
 
-// Get standards by program and organization
 const getStandardsByProgramAndOrg = async (req, res) => {
     try {
         const { programId, organizationId } = req.query;
@@ -97,7 +95,6 @@ const getStandardsByProgramAndOrg = async (req, res) => {
     }
 };
 
-// Create standard
 const createStandard = async (req, res) => {
     try {
         const {
@@ -113,7 +110,6 @@ const createStandard = async (req, res) => {
             evaluationCriteria
         } = req.body;
 
-        // Check if program and organization exist
         const [program, organization] = await Promise.all([
             Program.findById(programId),
             Organization.findById(organizationId)

@@ -1,6 +1,5 @@
 const cloudinary = require('cloudinary').v2;
 
-// Cấu hình Cloudinary
 cloudinary.config({
     cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
     api_key: process.env.CLOUDINARY_API_KEY,
@@ -8,7 +7,6 @@ cloudinary.config({
     secure: true
 });
 
-// Upload file to cloudinary
 const uploadFile = async (filePath, options = {}) => {
     try {
         const defaultOptions = {
@@ -42,7 +40,6 @@ const uploadFile = async (filePath, options = {}) => {
     }
 };
 
-// Delete file from cloudinary
 const deleteFile = async (publicId) => {
     try {
         const result = await cloudinary.uploader.destroy(publicId);
@@ -59,7 +56,6 @@ const deleteFile = async (publicId) => {
     }
 };
 
-// Upload multiple files
 const uploadMultipleFiles = async (files, options = {}) => {
     try {
         const uploadPromises = files.map(file => uploadFile(file.path, {
@@ -81,12 +77,10 @@ const uploadMultipleFiles = async (files, options = {}) => {
     }
 };
 
-// Generate transformation URL
 const getTransformedUrl = (publicId, transformations) => {
     return cloudinary.url(publicId, transformations);
 };
 
-// Get file info
 const getFileInfo = async (publicId) => {
     try {
         const result = await cloudinary.api.resource(publicId);

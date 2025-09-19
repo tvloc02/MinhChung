@@ -20,7 +20,6 @@ const login = async (req, res) => {
             });
         }
 
-        // ✅ LOẠI BỎ HOÀN TOÀN .populate()
         const user = await User.findByEmail(email);
 
         if (!user) {

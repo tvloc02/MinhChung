@@ -66,7 +66,6 @@ const getPrograms = async (req, res) => {
     }
 };
 
-// Get all programs for dropdown
 const getAllPrograms = async (req, res) => {
     try {
         const programs = await Program.find({ status: 'active' })
@@ -87,7 +86,6 @@ const getAllPrograms = async (req, res) => {
     }
 };
 
-// Get program by ID
 const getProgramById = async (req, res) => {
     try {
         const { id } = req.params;

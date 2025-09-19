@@ -3,7 +3,6 @@ const Evidence = require('../models/Evidence');
 const { Standard, Criteria } = require('../models/Program');
 const fs = require('fs');
 
-// Import evidences from Excel/CSV file
 const importEvidences = async (filePath, programId, organizationId, userId) => {
     try {
         // Read file

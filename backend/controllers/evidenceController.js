@@ -8,7 +8,6 @@ const archiver = require('archiver');
 const path = require('path');
 const fs = require('fs');
 
-// Lấy danh sách minh chứng với phân trang và lọc
 const getEvidences = async (req, res) => {
     try {
         const {
@@ -122,7 +121,6 @@ const getEvidences = async (req, res) => {
     }
 };
 
-// Lấy minh chứng theo ID
 const getEvidenceById = async (req, res) => {
     try {
         const { id } = req.params;
@@ -204,7 +202,6 @@ const createEvidence = async (req, res) => {
             });
         }
 
-        // Kiểm tra xem standard và criteria có tồn tại không
         const [standard, criteria] = await Promise.all([
             Standard.findById(standardId),
             Criteria.findById(criteriaId)
@@ -217,7 +214,6 @@ const createEvidence = async (req, res) => {
             });
         }
 
-        // Tạo mã minh chứng tự động nếu không được cung cấp
         let evidenceCode = code;
         if (!evidenceCode) {
             evidenceCode = await Evidence.generateCode(
@@ -225,7 +221,6 @@ const createEvidence = async (req, res) => {
                 criteria.code
             );
         } else {
-            // Kiểm tra mã đã tồn tại chưa
             const existingEvidence = await Evidence.findOne({ code: evidenceCode });
             if (existingEvidence) {
                 return res.status(400).json({
@@ -279,7 +274,6 @@ const createEvidence = async (req, res) => {
     }
 };
 
-// Cập nhật minh chứng
 const updateEvidence = async (req, res) => {
     try {
         const { id } = req.params;
@@ -293,7 +287,6 @@ const updateEvidence = async (req, res) => {
             });
         }
 
-        // Kiểm tra quyền truy cập
         if (req.user.role !== 'admin' &&
             !req.user.hasStandardAccess(evidence.standardId) &&
             !req.user.hasCriteriaAccess(evidence.criteriaId)) {
@@ -303,7 +296,6 @@ const updateEvidence = async (req, res) => {
             });
         }
 
-        // Kiểm tra mã minh chứng nếu được thay đổi
         if (updateData.code && updateData.code !== evidence.code) {
             const existingEvidence = await Evidence.findOne({
                 code: updateData.code,
@@ -317,7 +309,6 @@ const updateEvidence = async (req, res) => {
             }
         }
 
-        // Cập nhật các trường được phép
         const allowedFields = [
             'name', 'description', 'documentNumber', 'documentType',
             'issueDate', 'effectiveDate', 'issuingAgency', 'notes', 'tags', 'status'
@@ -355,7 +346,6 @@ const updateEvidence = async (req, res) => {
     }
 };
 
-// Xóa minh chứng
 const deleteEvidence = async (req, res) => {
     try {
         const { id } = req.params;
@@ -368,7 +358,6 @@ const deleteEvidence = async (req, res) => {
             });
         }
 
-        // Kiểm tra quyền truy cập
         if (req.user.role !== 'admin' &&
             !req.user.hasStandardAccess(evidence.standardId) &&
             !req.user.hasCriteriaAccess(evidence.criteriaId)) {
@@ -378,7 +367,6 @@ const deleteEvidence = async (req, res) => {
             });
         }
 
-        // Xóa các file liên quan
         const files = await File.find({ evidenceId: id });
         for (const file of files) {
             if (fs.existsSync(file.filePath)) {
@@ -403,7 +391,6 @@ const deleteEvidence = async (req, res) => {
     }
 };
 
-// Xóa nhiều minh chứng
 const bulkDeleteEvidences = async (req, res) => {
     try {
         const { ids } = req.body;
@@ -415,7 +402,6 @@ const bulkDeleteEvidences = async (req, res) => {
             });
         }
 
-        // Kiểm tra quyền truy cập cho từng minh chứng
         const evidences = await Evidence.find({ _id: { $in: ids } });
         for (const evidence of evidences) {
             if (req.user.role !== 'admin' &&
@@ -428,7 +414,6 @@ const bulkDeleteEvidences = async (req, res) => {
             }
         }
 
-        // Xóa files
         const files = await File.find({ evidenceId: { $in: ids } });
         for (const file of files) {
             if (fs.existsSync(file.filePath)) {
@@ -453,7 +438,6 @@ const bulkDeleteEvidences = async (req, res) => {
     }
 };
 
-// Sao chép minh chứng
 const copyEvidence = async (req, res) => {
     try {
         const { id } = req.params;
@@ -467,7 +451,6 @@ const copyEvidence = async (req, res) => {
             });
         }
 
-        // Kiểm tra mã mới đã tồn tại chưa
         const existingEvidence = await Evidence.findOne({ code: newCode });
         if (existingEvidence) {
             return res.status(400).json({
@@ -500,7 +483,6 @@ const copyEvidence = async (req, res) => {
     }
 };
 
-// Di chuyển minh chứng
 const moveEvidence = async (req, res) => {
     try {
         const { id } = req.params;
@@ -514,7 +496,6 @@ const moveEvidence = async (req, res) => {
             });
         }
 
-        // Kiểm tra mã mới đã tồn tại chưa
         const existingEvidence = await Evidence.findOne({
             code: newCode,
             _id: { $ne: id }
@@ -544,7 +525,6 @@ const moveEvidence = async (req, res) => {
     }
 };
 
-// Tạo mã minh chứng tự động
 const generateCode = async (req, res) => {
     try {
         const { standardCode, criteriaCode, boxNumber = 1 } = req.body;
@@ -565,7 +545,6 @@ const generateCode = async (req, res) => {
     }
 };
 
-// Lấy cây minh chứng theo cấu trúc
 const getEvidenceTree = async (req, res) => {
     try {
         const { programId, organizationId } = req.query;
@@ -579,7 +558,6 @@ const getEvidenceTree = async (req, res) => {
             .populate('criteriaId', 'name code')
             .sort({ 'standardId.code': 1, 'criteriaId.code': 1, code: 1 });
 
-        // Nhóm theo Standard -> Criteria -> Evidences
         const tree = {};
         evidences.forEach(evidence => {
             const standardKey = `${evidence.standardId.code} - ${evidence.standardId.name}`;
@@ -621,7 +599,6 @@ const getEvidenceTree = async (req, res) => {
     }
 };
 
-// Tìm kiếm nâng cao
 const advancedSearch = async (req, res) => {
     try {
         const searchParams = req.body;
@@ -641,7 +618,6 @@ const advancedSearch = async (req, res) => {
     }
 };
 
-// Tải xuống hàng loạt
 const bulkDownload = async (req, res) => {
     try {
         const { ids } = req.body;
@@ -683,7 +659,6 @@ const bulkDownload = async (req, res) => {
     }
 };
 
-// Import minh chứng
 const importEvidences = async (req, res) => {
     try {
         const file = req.file;
@@ -703,7 +678,6 @@ const importEvidences = async (req, res) => {
             req.user.id
         );
 
-        // Xóa file tạm
         if (fs.existsSync(file.path)) {
             fs.unlinkSync(file.path);
         }
@@ -719,7 +693,6 @@ const importEvidences = async (req, res) => {
     }
 };
 
-// Tải template import
 const downloadImportTemplate = async (req, res) => {
     try {
         const { programId, organizationId } = req.query;
@@ -740,7 +713,6 @@ const downloadImportTemplate = async (req, res) => {
     }
 };
 
-// Export minh chứng
 const exportEvidences = async (req, res) => {
     try {
         const filters = req.query;
@@ -768,7 +740,6 @@ const exportEvidences = async (req, res) => {
     }
 };
 
-// Thống kê minh chứng
 const getStatistics = async (req, res) => {
     try {
         const { programId, organizationId, standardId, criteriaId } = req.query;
@@ -817,7 +788,6 @@ const getStatistics = async (req, res) => {
     }
 };
 
-// Tìm kiếm trong nội dung file
 const searchInFiles = async (req, res) => {
     try {
         const { keyword } = req.query;

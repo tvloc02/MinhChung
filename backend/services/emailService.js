@@ -1,6 +1,5 @@
 const nodemailer = require('nodemailer');
 
-// Cấu hình transporter
 const createTransporter = () => {
     const config = {
         host: process.env.SMTP_HOST || 'localhost',
@@ -12,7 +11,6 @@ const createTransporter = () => {
         }
     };
 
-    // Cấu hình cho Gmail
     if (process.env.EMAIL_PROVIDER === 'gmail') {
         config.service = 'gmail';
         config.host = 'smtp.gmail.com';
@@ -20,7 +18,6 @@ const createTransporter = () => {
         config.secure = false;
     }
 
-    // Cấu hình cho Outlook/Hotmail
     if (process.env.EMAIL_PROVIDER === 'outlook') {
         config.service = 'hotmail';
         config.host = 'smtp.live.com';
@@ -31,7 +28,6 @@ const createTransporter = () => {
     return nodemailer.createTransporter(config);
 };
 
-// Template email cơ bản
 const createEmailTemplate = (title, content, footerText = '') => {
     return `
     <!DOCTYPE html>
@@ -115,7 +111,6 @@ const createEmailTemplate = (title, content, footerText = '') => {
     `;
 };
 
-// Gửi email reset password
 const sendPasswordResetEmail = async (email, fullName, resetUrl) => {
     try {
         const transporter = createTransporter();
@@ -159,7 +154,6 @@ const sendPasswordResetEmail = async (email, fullName, resetUrl) => {
     }
 };
 
-// Gửi email thông báo tài khoản mới
 const sendWelcomeEmail = async (email, fullName, defaultPassword, loginUrl) => {
     try {
         const transporter = createTransporter();
@@ -207,7 +201,6 @@ const sendWelcomeEmail = async (email, fullName, defaultPassword, loginUrl) => {
     }
 };
 
-// Gửi email thông báo thay đổi mật khẩu
 const sendPasswordChangeNotification = async (email, fullName) => {
     try {
         const transporter = createTransporter();
@@ -240,7 +233,6 @@ const sendPasswordChangeNotification = async (email, fullName) => {
     }
 };
 
-// Gửi email thông báo import thành công
 const sendImportNotification = async (email, fullName, importResult) => {
     try {
         const transporter = createTransporter();
@@ -284,7 +276,6 @@ const sendImportNotification = async (email, fullName, importResult) => {
     }
 };
 
-// Gửi email báo cáo hàng tuần
 const sendWeeklyReport = async (adminEmails, reportData) => {
     try {
         const transporter = createTransporter();
@@ -331,7 +322,6 @@ const sendWeeklyReport = async (adminEmails, reportData) => {
     }
 };
 
-// Kiểm tra cấu hình email
 const testEmailConfiguration = async () => {
     try {
         const transporter = createTransporter();

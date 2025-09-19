@@ -5,7 +5,6 @@ const pdfParse = require('pdf-parse');
 const mammoth = require('mammoth');
 const XLSX = require('xlsx');
 
-// Extract text content from various file types
 const extractTextContent = async (filePath, mimeType) => {
     try {
         switch (mimeType) {
@@ -32,7 +31,6 @@ const extractTextContent = async (filePath, mimeType) => {
     }
 };
 
-// Extract text from PDF
 const extractFromPDF = async (filePath) => {
     try {
         const dataBuffer = fs.readFileSync(filePath);
@@ -328,7 +326,6 @@ const scanForViruses = async (filePath) => {
             };
         }
 
-        // Check file size (very large files might be suspicious)
         const stats = fs.statSync(filePath);
         if (stats.size > 100 * 1024 * 1024) { // 100MB
             return {
@@ -353,7 +350,6 @@ const scanForViruses = async (filePath) => {
     }
 };
 
-// Compress file using gzip
 const compressFile = (inputPath, outputPath) => {
     return new Promise((resolve, reject) => {
         const zlib = require('zlib');

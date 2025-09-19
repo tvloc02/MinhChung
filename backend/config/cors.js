@@ -1,6 +1,5 @@
 const corsOptions = {
     origin: function (origin, callback) {
-        // Danh sách các domain được phép
         const allowedOrigins = [
             'http://localhost:3000',
             'http://localhost:3001',
@@ -9,12 +8,10 @@ const corsOptions = {
             process.env.ADMIN_URL
         ].filter(Boolean);
 
-        // Trong development, cho phép tất cả các origin
         if (process.env.NODE_ENV === 'development') {
             return callback(null, true);
         }
 
-        // Kiểm tra origin
         if (!origin || allowedOrigins.indexOf(origin) !== -1) {
             callback(null, true);
         } else {
@@ -47,7 +44,6 @@ const corsOptions = {
     maxAge: 86400 // 24 hours
 };
 
-// CORS cho development
 const devCorsOptions = {
     origin: true,
     credentials: true,
