@@ -1,5 +1,4 @@
-// Date utilities
-export const formatDate = (date, format = 'DD/MM/YYYY') => {
+const formatDate = (date, format = 'DD/MM/YYYY') => {
     if (!date) return ''
 
     const d = new Date(date)
@@ -21,7 +20,7 @@ export const formatDate = (date, format = 'DD/MM/YYYY') => {
     }
 }
 
-export const getRelativeTime = (date) => {
+const getRelativeTime = (date) => {
     if (!date) return ''
 
     const now = new Date()
@@ -39,18 +38,17 @@ export const getRelativeTime = (date) => {
     return formatDate(date)
 }
 
-// String utilities
-export const truncateText = (text, maxLength = 100) => {
+const truncateText = (text, maxLength = 100) => {
     if (!text || text.length <= maxLength) return text
     return text.substring(0, maxLength) + '...'
 }
 
-export const capitalizeFirstLetter = (string) => {
+const capitalizeFirstLetter = (string) => {
     if (!string) return ''
     return string.charAt(0).toUpperCase() + string.slice(1)
 }
 
-export const slugify = (text) => {
+const slugify = (text) => {
     return text
         .toString()
         .toLowerCase()
@@ -62,13 +60,12 @@ export const slugify = (text) => {
         .replace(/-+$/, '')
 }
 
-// Number utilities
-export const formatNumber = (number) => {
+const formatNumber = (number) => {
     if (number == null) return '0'
     return new Intl.NumberFormat('vi-VN').format(number)
 }
 
-export const formatBytes = (bytes, decimals = 2) => {
+const formatBytes = (bytes, decimals = 2) => {
     if (bytes === 0) return '0 Bytes'
 
     const k = 1024
@@ -80,8 +77,7 @@ export const formatBytes = (bytes, decimals = 2) => {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i]
 }
 
-// Array utilities
-export const groupBy = (array, key) => {
+const groupBy = (array, key) => {
     return array.reduce((result, currentValue) => {
         const groupKey = currentValue[key]
         if (!result[groupKey]) {
@@ -92,7 +88,7 @@ export const groupBy = (array, key) => {
     }, {})
 }
 
-export const sortBy = (array, key, order = 'asc') => {
+const sortBy = (array, key, order = 'asc') => {
     return array.sort((a, b) => {
         const valueA = a[key]
         const valueB = b[key]
@@ -105,7 +101,7 @@ export const sortBy = (array, key, order = 'asc') => {
     })
 }
 
-export const removeDuplicates = (array, key = null) => {
+const removeDuplicates = (array, key = null) => {
     if (!key) {
         return [...new Set(array)]
     }
@@ -121,8 +117,7 @@ export const removeDuplicates = (array, key = null) => {
     })
 }
 
-// Object utilities
-export const deepClone = (obj) => {
+const deepClone = (obj) => {
     if (obj === null || typeof obj !== 'object') return obj
     if (obj instanceof Date) return new Date(obj.getTime())
     if (obj instanceof Array) return obj.map(item => deepClone(item))
@@ -135,13 +130,13 @@ export const deepClone = (obj) => {
     }
 }
 
-export const omit = (obj, keys) => {
+const omit = (obj, keys) => {
     const result = { ...obj }
     keys.forEach(key => delete result[key])
     return result
 }
 
-export const pick = (obj, keys) => {
+const pick = (obj, keys) => {
     const result = {}
     keys.forEach(key => {
         if (key in obj) {
@@ -151,8 +146,7 @@ export const pick = (obj, keys) => {
     return result
 }
 
-// URL utilities
-export const buildQueryString = (params) => {
+const buildQueryString = (params) => {
     const queryString = new URLSearchParams()
 
     Object.entries(params).forEach(([key, value]) => {
@@ -164,7 +158,7 @@ export const buildQueryString = (params) => {
     return queryString.toString()
 }
 
-export const parseQueryString = (queryString) => {
+const parseQueryString = (queryString) => {
     const params = new URLSearchParams(queryString)
     const result = {}
 
@@ -175,13 +169,12 @@ export const parseQueryString = (queryString) => {
     return result
 }
 
-// File utilities
-export const getFileExtension = (filename) => {
+const getFileExtension = (filename) => {
     if (!filename) return ''
     return filename.split('.').pop().toLowerCase()
 }
 
-export const getFileIcon = (filename) => {
+const getFileIcon = (filename) => {
     const extension = getFileExtension(filename)
 
     switch (extension) {
@@ -210,40 +203,41 @@ export const getFileIcon = (filename) => {
     }
 }
 
-// Validation utilities
-export const isValidEmail = (email) => {
+const isValidEmail = (email) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     return emailRegex.test(email)
 }
 
-export const isValidPhone = (phone) => {
+const isValidPhone = (phone) => {
     const phoneRegex = /^[0-9]{10,11}$/
     return phoneRegex.test(phone)
 }
 
-export const isValidPassword = (password) => {
+const isValidPassword = (password) => {
     return password && password.length >= 6
 }
 
-export const isValidEvidenceCode = (code) => {
+const isValidEvidenceCode = (code) => {
     const codeRegex = /^H\d+\.\d+\.\d+\.\d+$/
     return codeRegex.test(code)
 }
 
-// DOM utilities
-export const scrollToTop = () => {
-    window.scrollTo({ top: 0, behavior: 'smooth' })
-}
-
-export const scrollToElement = (elementId) => {
-    const element = document.getElementById(elementId)
-    if (element) {
-        element.scrollIntoView({ behavior: 'smooth' })
+const scrollToTop = () => {
+    if (typeof window !== 'undefined') {
+        window.scrollTo({ top: 0, behavior: 'smooth' })
     }
 }
 
-// Local Storage utilities
-export const getLocalStorage = (key, defaultValue = null) => {
+const scrollToElement = (elementId) => {
+    if (typeof window !== 'undefined') {
+        const element = document.getElementById(elementId)
+        if (element) {
+            element.scrollIntoView({ behavior: 'smooth' })
+        }
+    }
+}
+
+const getLocalStorage = (key, defaultValue = null) => {
     if (typeof window === 'undefined') return defaultValue
 
     try {
@@ -255,7 +249,7 @@ export const getLocalStorage = (key, defaultValue = null) => {
     }
 }
 
-export const setLocalStorage = (key, value) => {
+const setLocalStorage = (key, value) => {
     if (typeof window === 'undefined') return
 
     try {
@@ -265,7 +259,7 @@ export const setLocalStorage = (key, value) => {
     }
 }
 
-export const removeLocalStorage = (key) => {
+const removeLocalStorage = (key) => {
     if (typeof window === 'undefined') return
 
     try {
@@ -275,8 +269,7 @@ export const removeLocalStorage = (key) => {
     }
 }
 
-// Color utilities
-export const hexToRgb = (hex) => {
+const hexToRgb = (hex) => {
     const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex)
     return result ? {
         r: parseInt(result[1], 16),
@@ -285,12 +278,11 @@ export const hexToRgb = (hex) => {
     } : null
 }
 
-export const rgbToHex = (r, g, b) => {
+const rgbToHex = (r, g, b) => {
     return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)
 }
 
-// Debounce utility
-export const debounce = (func, wait) => {
+const debounce = (func, wait) => {
     let timeout
     return function executedFunction(...args) {
         const later = () => {
@@ -302,8 +294,7 @@ export const debounce = (func, wait) => {
     }
 }
 
-// Throttle utility
-export const throttle = (func, limit) => {
+const throttle = (func, limit) => {
     let inThrottle
     return function() {
         const args = arguments
@@ -316,8 +307,7 @@ export const throttle = (func, limit) => {
     }
 }
 
-// Generate random string
-export const generateRandomString = (length = 10) => {
+const generateRandomString = (length = 10) => {
     const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
     let result = ''
     for (let i = 0; i < length; i++) {
@@ -326,8 +316,7 @@ export const generateRandomString = (length = 10) => {
     return result
 }
 
-// Generate UUID
-export const generateUUID = () => {
+const generateUUID = () => {
     return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
         const r = Math.random() * 16 | 0
         const v = c == 'x' ? r : (r & 0x3 | 0x8)
@@ -335,24 +324,22 @@ export const generateUUID = () => {
     })
 }
 
-// Error handling utilities
-export const getErrorMessage = (error) => {
+const getErrorMessage = (error) => {
     if (typeof error === 'string') return error
     if (error?.response?.data?.message) return error.response.data.message
     if (error?.message) return error.message
     return 'Có lỗi xảy ra'
 }
 
-export const isNetworkError = (error) => {
+const isNetworkError = (error) => {
     return !error.response && error.request
 }
 
-// Evidence code utilities
-export const generateEvidenceCode = (boxNumber, standardCode, criteriaCode, sequence) => {
+const generateEvidenceCode = (boxNumber, standardCode, criteriaCode, sequence) => {
     return `H${boxNumber}.${standardCode.padStart(2, '0')}.${criteriaCode.padStart(2, '0')}.${sequence.toString().padStart(2, '0')}`
 }
 
-export const parseEvidenceCode = (code) => {
+const parseEvidenceCode = (code) => {
     const match = code.match(/^H(\d+)\.(\d+)\.(\d+)\.(\d+)$/)
     if (!match) return null
 
@@ -364,19 +351,20 @@ export const parseEvidenceCode = (code) => {
     }
 }
 
-// Export utilities
-export const downloadBlob = (blob, filename) => {
-    const url = window.URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = url
-    link.download = filename
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-    window.URL.revokeObjectURL(url)
+const downloadBlob = (blob, filename) => {
+    if (typeof window !== 'undefined') {
+        const url = window.URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        link.download = filename
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+        window.URL.revokeObjectURL(url)
+    }
 }
 
-export const exportToCSV = (data, filename) => {
+const exportToCSV = (data, filename) => {
     if (!data || data.length === 0) return
 
     const headers = Object.keys(data[0])
@@ -395,3 +383,44 @@ export const exportToCSV = (data, filename) => {
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
     downloadBlob(blob, filename)
 }
+
+module.exports = {
+    formatDate,
+    getRelativeTime,
+    truncateText,
+    capitalizeFirstLetter,
+    slugify,
+    formatNumber,
+    formatBytes,
+    groupBy,
+    sortBy,
+    removeDuplicates,
+    deepClone,
+    omit,
+    pick,
+    buildQueryString,
+    parseQueryString,
+    getFileExtension,
+    getFileIcon,
+    isValidEmail,
+    isValidPhone,
+    isValidPassword,
+    isValidEvidenceCode,
+    scrollToTop,
+    scrollToElement,
+    getLocalStorage,
+    setLocalStorage,
+    removeLocalStorage,
+    hexToRgb,
+    rgbToHex,
+    debounce,
+    throttle,
+    generateRandomString,
+    generateUUID,
+    getErrorMessage,
+    isNetworkError,
+    generateEvidenceCode,
+    parseEvidenceCode,
+    downloadBlob,
+    exportToCSV
+};
