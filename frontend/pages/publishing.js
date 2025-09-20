@@ -48,7 +48,7 @@ export default function PublishingPage() {
     const [showEditModal, setShowEditModal] = useState(false)
     const [showDetailModal, setShowDetailModal] = useState(false)
     const [showShareModal, setShowShareModal] = useState(false)
-    const [deleteModal, setDeleteModal] = useState({ show: false, publicationId: null }))
+    const [deleteModal, setDeleteModal] = useState({ show: false, publicationId: null })
     const [editingPublication, setEditingPublication] = useState(null)
     const [viewingPublication, setViewingPublication] = useState(null)
     const [sharingPublication, setSharingPublication] = useState(null)
