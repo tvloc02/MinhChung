@@ -1,8 +1,14 @@
-import * as yup from 'yup'
-import { VALIDATION_RULES } from './constants'
+const yup = require('yup')
 
-// Common validation schemas
-export const loginSchema = yup.object({
+const VALIDATION_RULES = {
+    PASSWORD_MIN_LENGTH: 6,
+    EMAIL: /^[a-zA-Z0-9._-]+(@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})?$/,
+    PHONE: /^[0-9]{10,11}$/,
+    CODE_PATTERN: /^H\d+\.\d{2}\.\d{2}\.\d{2}$/,
+    FILE_MAX_SIZE: 50 * 1024 * 1024
+}
+
+const loginSchema = yup.object({
     email: yup
         .string()
         .required('Email không được để trống')
@@ -13,7 +19,7 @@ export const loginSchema = yup.object({
         .min(VALIDATION_RULES.PASSWORD_MIN_LENGTH, `Mật khẩu phải có ít nhất ${VALIDATION_RULES.PASSWORD_MIN_LENGTH} ký tự`)
 })
 
-export const evidenceSchema = yup.object({
+const evidenceSchema = yup.object({
     name: yup
         .string()
         .required('Tên minh chứng không được để trống')
@@ -51,7 +57,7 @@ export const evidenceSchema = yup.object({
         .max(500, 'Tóm tắt nội dung không được quá 500 ký tự')
 })
 
-export const userSchema = yup.object({
+const userSchema = yup.object({
     name: yup
         .string()
         .required('Họ và tên không được để trống')
@@ -67,7 +73,7 @@ export const userSchema = yup.object({
     role: yup
         .string()
         .required('Vai trò không được để trống')
-        .oneOf(['admin', 'manager', 'staff', 'viewer'], 'Vai trò không hợp lệ'),
+        .oneOf(['admin', 'manager', 'staff', 'expert'], 'Vai trò không hợp lệ'),
     department: yup
         .string()
         .max(100, 'Phòng ban không được quá 100 ký tự'),
@@ -76,7 +82,7 @@ export const userSchema = yup.object({
         .max(100, 'Chức vụ không được quá 100 ký tự')
 })
 
-export const changePasswordSchema = yup.object({
+const changePasswordSchema = yup.object({
     currentPassword: yup
         .string()
         .required('Mật khẩu hiện tại không được để trống'),
@@ -91,7 +97,7 @@ export const changePasswordSchema = yup.object({
         .oneOf([yup.ref('newPassword')], 'Xác nhận mật khẩu không khớp')
 })
 
-export const programSchema = yup.object({
+const programSchema = yup.object({
     name: yup
         .string()
         .required('Tên chương trình không được để trống')
@@ -112,7 +118,7 @@ export const programSchema = yup.object({
         .min(yup.ref('startDate'), 'Ngày kết thúc phải sau ngày bắt đầu')
 })
 
-export const standardSchema = yup.object({
+const standardSchema = yup.object({
     name: yup
         .string()
         .required('Tên tiêu chuẩn không được để trống')
@@ -129,7 +135,7 @@ export const standardSchema = yup.object({
         .required('Chương trình không được để trống')
 })
 
-export const criteriaSchema = yup.object({
+const criteriaSchema = yup.object({
     name: yup
         .string()
         .required('Tên tiêu chí không được để trống')
@@ -146,8 +152,7 @@ export const criteriaSchema = yup.object({
         .required('Tiêu chuẩn không được để trống')
 })
 
-// File validation
-export const fileSchema = yup.object({
+const fileSchema = yup.object({
     name: yup
         .string()
         .required('Tên file không được để trống'),
@@ -159,8 +164,7 @@ export const fileSchema = yup.object({
         .required('Loại file không được để trống')
 })
 
-// Custom validators
-export const validateEvidenceCode = (code) => {
+const validateEvidenceCode = (code) => {
     if (!code) return 'Mã minh chứng không được để trống'
     if (!VALIDATION_RULES.CODE_PATTERN.test(code)) {
         return 'Mã minh chứng không đúng định dạng (VD: H1.01.02.04)'
@@ -168,7 +172,7 @@ export const validateEvidenceCode = (code) => {
     return null
 }
 
-export const validateEmail = (email) => {
+const validateEmail = (email) => {
     if (!email) return 'Email không được để trống'
     if (!VALIDATION_RULES.EMAIL.test(email)) {
         return 'Email không hợp lệ'
@@ -176,15 +180,15 @@ export const validateEmail = (email) => {
     return null
 }
 
-export const validatePhone = (phone) => {
-    if (!phone) return null // Phone is optional
+const validatePhone = (phone) => {
+    if (!phone) return null
     if (!VALIDATION_RULES.PHONE.test(phone)) {
         return 'Số điện thoại không hợp lệ (10-11 chữ số)'
     }
     return null
 }
 
-export const validatePassword = (password) => {
+const validatePassword = (password) => {
     if (!password) return 'Mật khẩu không được để trống'
     if (password.length < VALIDATION_RULES.PASSWORD_MIN_LENGTH) {
         return `Mật khẩu phải có ít nhất ${VALIDATION_RULES.PASSWORD_MIN_LENGTH} ký tự`
@@ -192,51 +196,50 @@ export const validatePassword = (password) => {
     return null
 }
 
-export const validateRequired = (value, fieldName) => {
+const validateRequired = (value, fieldName) => {
     if (!value || (typeof value === 'string' && value.trim() === '')) {
         return `${fieldName} không được để trống`
     }
     return null
 }
 
-export const validateMaxLength = (value, maxLength, fieldName) => {
+const validateMaxLength = (value, maxLength, fieldName) => {
     if (value && value.length > maxLength) {
         return `${fieldName} không được quá ${maxLength} ký tự`
     }
     return null
 }
 
-export const validateMinLength = (value, minLength, fieldName) => {
+const validateMinLength = (value, minLength, fieldName) => {
     if (value && value.length < minLength) {
         return `${fieldName} phải có ít nhất ${minLength} ký tự`
     }
     return null
 }
 
-export const validateFileType = (file, allowedTypes) => {
+const validateFileType = (file, allowedTypes) => {
     if (!allowedTypes.includes(file.type)) {
         return `Loại file không được hỗ trợ. Chỉ chấp nhận: ${allowedTypes.join(', ')}`
     }
     return null
 }
 
-export const validateFileSize = (file, maxSize = VALIDATION_RULES.FILE_MAX_SIZE) => {
+const validateFileSize = (file, maxSize = VALIDATION_RULES.FILE_MAX_SIZE) => {
     if (file.size > maxSize) {
         return `Kích thước file không được quá ${maxSize / (1024 * 1024)}MB`
     }
     return null
 }
 
-// Validation helper functions
-export const getFieldError = (errors, fieldName) => {
+const getFieldError = (errors, fieldName) => {
     return errors[fieldName]?.message || null
 }
 
-export const hasError = (errors, fieldName) => {
+const hasError = (errors, fieldName) => {
     return !!errors[fieldName]
 }
 
-export const validateForm = async (schema, data) => {
+const validateForm = async (schema, data) => {
     try {
         await schema.validate(data, { abortEarly: false })
         return { isValid: true, errors: {} }
@@ -249,7 +252,7 @@ export const validateForm = async (schema, data) => {
     }
 }
 
-export const validateField = async (schema, fieldName, value) => {
+const validateField = async (schema, fieldName, value) => {
     try {
         await schema.validateAt(fieldName, { [fieldName]: value })
         return null
@@ -257,3 +260,28 @@ export const validateField = async (schema, fieldName, value) => {
         return error.message
     }
 }
+
+module.exports = {
+    VALIDATION_RULES,
+    loginSchema,
+    evidenceSchema,
+    userSchema,
+    changePasswordSchema,
+    programSchema,
+    standardSchema,
+    criteriaSchema,
+    fileSchema,
+    validateEvidenceCode,
+    validateEmail,
+    validatePhone,
+    validatePassword,
+    validateRequired,
+    validateMaxLength,
+    validateMinLength,
+    validateFileType,
+    validateFileSize,
+    getFieldError,
+    hasError,
+    validateForm,
+    validateField
+};
