@@ -9,8 +9,9 @@ const userSchema = new mongoose.Schema({
         lowercase: true,
         validate: {
             validator: function(email) {
-                return /^[a-zA-Z0-9]+$/.test(email);      },
-            message: 'Email không hợp lệ (chỉ nhập phần trước @)'
+                return /^[a-zA-Z0-9._-]+(@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})?$/.test(email);
+            },
+            message: 'Email không hợp lệ'
         }
     },
 
@@ -39,7 +40,7 @@ const userSchema = new mongoose.Schema({
 
     role: {
         type: String,
-        enum: ['admin', 'manager', 'staff'],
+        enum: ['admin', 'manager', 'staff', 'expert'],
         default: 'staff'
     },
 
@@ -49,23 +50,42 @@ const userSchema = new mongoose.Schema({
         default: 'active'
     },
 
-    // Quyền truy cập theo tiêu chuẩn (chỉ được thao tác với minh chứng thuộc tiêu chuẩn này)
+    // Nhóm người dùng
+    userGroups: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'UserGroup'
+    }],
+
+    // Quyền truy cập theo tiêu chuẩn
     standardAccess: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Standard'
     }],
 
-    // Quyền truy cập theo tiêu chí (chỉ được thao tác với minh chứng thuộc tiêu chí này)
+    // Quyền truy cập theo tiêu chí
     criteriaAccess: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Criteria'
     }],
 
+    // Thông tin cơ bản
     department: String,
     position: String,
+    facultyId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Faculty'
+    },
+
+    // Thông tin chữ ký số
+    digitalSignature: {
+        certificateId: String,
+        publicKey: String,
+        validFrom: Date,
+        validTo: Date,
+        issuer: String
+    },
 
     lastLogin: Date,
-
     resetPasswordToken: String,
     resetPasswordExpires: Date,
 
@@ -81,10 +101,10 @@ const userSchema = new mongoose.Schema({
 
 userSchema.index({ email: 1 });
 userSchema.index({ fullName: 'text' });
+userSchema.index({ role: 1 });
 
 userSchema.pre('save', async function(next) {
     if (!this.isModified('password')) return next();
-
     try {
         const salt = await bcrypt.genSalt(10);
         this.password = await bcrypt.hash(this.password, salt);
@@ -106,7 +126,8 @@ userSchema.methods.comparePassword = async function(candidatePassword) {
 };
 
 userSchema.methods.getFullEmail = function(domain = 'cmc.edu.vn') {
-    return `${this.email.split('@')[0]}@${domain}`;
+    if (this.email.includes('@')) return this.email;
+    return `${this.email}@${domain}`;
 };
 
 userSchema.methods.hasStandardAccess = function(standardId) {
@@ -119,24 +140,7 @@ userSchema.methods.hasCriteriaAccess = function(criteriaId) {
     return this.criteriaAccess.some(id => id.toString() === criteriaId.toString());
 };
 
-// Virtual cho email đầy đủ
-userSchema.methods.getEmailWithDomain = function(domain = 'cmc.edu.vn') {
-    const username = this.email.split('@')[0];
-    return `${username}@${domain}`;
-};
-
 userSchema.set('toJSON', { virtuals: true });
 userSchema.set('toObject', { virtuals: true });
-
-userSchema.statics.generateDefaultPassword = function(email) {
-    const firstChar = email.charAt(0).toUpperCase();
-    const restChars = email.slice(1).toLowerCase();
-    return `${firstChar}${restChars}@123`;
-};
-
-userSchema.statics.findByEmail = function(emailInput) {
-    const username = emailInput.split('@')[0].toLowerCase();
-    return this.findOne({ email: username });
-};
 
 module.exports = mongoose.model('User', userSchema);
