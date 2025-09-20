@@ -1,3 +1,5 @@
+const mongoose = require('mongoose');
+
 const organizationSchema = new mongoose.Schema({
     name: {
         type: String,
@@ -103,36 +105,19 @@ const organizationSchema = new mongoose.Schema({
     },
 
     metadata: {
-        totalPrograms: {
-            type: Number,
-            default: 0
-        },
-        totalStandards: {
-            type: Number,
-            default: 0
-        },
-        totalEvidences: {
-            type: Number,
-            default: 0
-        }
+        totalPrograms: { type: Number, default: 0 },
+        totalStandards: { type: Number, default: 0 },
+        totalEvidences: { type: Number, default: 0 }
     },
 
-    createdAt: {
-        type: Date,
-        default: Date.now
-    },
-
-    updatedAt: {
-        type: Date,
-        default: Date.now
-    }
+    createdAt: { type: Date, default: Date.now },
+    updatedAt: { type: Date, default: Date.now }
 });
 
 organizationSchema.index({ code: 1 });
 organizationSchema.index({ level: 1 });
 organizationSchema.index({ type: 1 });
 organizationSchema.index({ status: 1 });
-organizationSchema.index({ name: 'text', description: 'text' });
 
 organizationSchema.pre('save', function(next) {
     if (this.isModified() && !this.isNew) {
@@ -145,19 +130,7 @@ organizationSchema.virtual('url').get(function() {
     return `/organizations/${this._id}`;
 });
 
-organizationSchema.methods.isInUse = async function() {
-    const Standard = require('./Standard');
-    const Evidence = require('./Evidence');
-
-    const [standardCount, evidenceCount] = await Promise.all([
-        Standard.countDocuments({ organizationId: this._id }),
-        Evidence.countDocuments({ organizationId: this._id })
-    ]);
-
-    return standardCount > 0 || evidenceCount > 0;
-};
-
 organizationSchema.set('toJSON', { virtuals: true });
 organizationSchema.set('toObject', { virtuals: true });
 
-const Organization = mongoose.model('Organization', organizationSchema);
+module.exports = mongoose.model('Organization', organizationSchema);
