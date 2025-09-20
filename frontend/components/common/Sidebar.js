@@ -114,6 +114,12 @@ export default function Sidebar({ open, onClose }) {
                 { name: 'Ngành', icon: Building2, path: '/unit-data/departments' },
                 { name: 'Nhân sự', icon: UserCheck, path: '/unit-data/personnel' }
             ]
+        },
+        {
+            name: 'Lịch sử sử dụng',
+            icon: TrendingUp,
+            path: '/history',
+            active: router.pathname.includes('/history')
         }
     ]
 
@@ -152,7 +158,7 @@ export default function Sidebar({ open, onClose }) {
                     {/* Header with toggle button */}
                     <div className="flex items-center justify-between p-4 border-b border-gray-200">
                         {!collapsed && (
-                            <h2 className="text-lg font-semibold text-gray-800">Menu</h2>
+                            <h2 className="text-lg font-semibold text-gray-800">Thao tác</h2>
                         )}
                         <button
                             onClick={toggleCollapse}

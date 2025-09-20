@@ -69,15 +69,7 @@ export default function LoginForm() {
                 }}></div>
             </div>
 
-            <div className="absolute top-6 left-6 z-50">
-                <button
-                    onClick={() => router.back()}
-                    className="flex items-center space-x-2 px-4 py-2 rounded-lg font-medium text-white bg-blue-600/80 hover:bg-blue-700/80 backdrop-blur-sm transition-all duration-200"
-                >
-                    <ArrowLeft className="w-4 h-4" />
-                    <span>Quay lại</span>
-                </button>
-            </div>
+
 
             <div className="relative z-10 min-h-screen flex items-center justify-center p-6">
                 <div className="w-full max-w-5xl mx-auto">
