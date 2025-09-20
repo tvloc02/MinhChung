@@ -1,16 +1,13 @@
-const Expert = require('../models/Expert');
+const Faculty = require('../models/Faculty');
 const Personnel = require('../models/Personnel');
-const { Program, Standard } = require('../models/Program');
 
-const getExperts = async (req, res) => {
+const getFaculties = async (req, res) => {
     try {
         const {
             page = 1,
             limit = 10,
             search,
             status,
-            availability,
-            specialization,
             sortBy = 'createdAt',
             sortOrder = 'desc'
         } = req.query;
@@ -22,46 +19,33 @@ const getExperts = async (req, res) => {
         let query = {};
 
         if (search) {
-            // Search in expert code and personnel info
-            const personnelIds = await Personnel.find({
-                $or: [
-                    { fullName: { $regex: search, $options: 'i' } },
-                    { email: { $regex: search, $options: 'i' } },
-                    { employeeId: { $regex: search, $options: 'i' } }
-                ]
-            }).distinct('_id');
-
             query.$or = [
-                { expertCode: { $regex: search, $options: 'i' } },
-                { personnelId: { $in: personnelIds } }
+                { name: { $regex: search, $options: 'i' } },
+                { code: { $regex: search, $options: 'i' } },
+                { description: { $regex: search, $options: 'i' } }
             ];
         }
 
         if (status) query.status = status;
-        if (availability) query.availability = availability;
-        if (specialization) {
-            query['specializations.field'] = { $regex: specialization, $options: 'i' };
-        }
 
         const sortOptions = {};
         sortOptions[sortBy] = sortOrder === 'asc' ? 1 : -1;
 
-        const [experts, total] = await Promise.all([
-            Expert.find(query)
-                .populate('personnelId', 'fullName email employeeId position facultyId departmentId')
-                .populate('assignedPrograms.programId', 'name code')
-                .populate('assignedStandards', 'name code')
+        const [faculties, total] = await Promise.all([
+            Faculty.find(query)
+                .populate('dean', 'fullName email position')
+                .populate('viceDeans', 'fullName email position')
                 .populate('createdBy', 'fullName email')
                 .sort(sortOptions)
                 .skip(skip)
                 .limit(limitNum),
-            Expert.countDocuments(query)
+            Faculty.countDocuments(query)
         ]);
 
         res.json({
             success: true,
             data: {
-                experts,
+                faculties,
                 pagination: {
                     current: pageNum,
                     pages: Math.ceil(total / limitNum),
@@ -73,403 +57,334 @@ const getExperts = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Get experts error:', error);
+        console.error('Get faculties error:', error);
         res.status(500).json({
             success: false,
-            message: 'Lỗi hệ thống khi lấy danh sách chuyên gia'
+            message: 'Lỗi hệ thống khi lấy danh sách khoa'
         });
     }
 };
 
-const getExpertById = async (req, res) => {
+const getAllFaculties = async (req, res) => {
+    try {
+        const faculties = await Faculty.find({ status: 'active' })
+            .select('name code')
+            .sort({ name: 1 });
+
+        res.json({
+            success: true,
+            data: faculties
+        });
+
+    } catch (error) {
+        console.error('Get all faculties error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Lỗi hệ thống khi lấy danh sách khoa'
+        });
+    }
+};
+
+const getFacultyById = async (req, res) => {
     try {
         const { id } = req.params;
 
-        const expert = await Expert.findById(id)
-            .populate('personnelId', 'fullName email employeeId position facultyId departmentId qualifications')
-            .populate('assignedPrograms.programId', 'name code description')
-            .populate('assignedStandards', 'name code description')
+        const faculty = await Faculty.findById(id)
+            .populate('dean', 'fullName email position employeeId')
+            .populate('viceDeans', 'fullName email position employeeId')
             .populate('createdBy', 'fullName email');
 
-        if (!expert) {
+        if (!faculty) {
             return res.status(404).json({
                 success: false,
-                message: 'Không tìm thấy chuyên gia'
+                message: 'Không tìm thấy khoa'
             });
         }
 
         res.json({
             success: true,
-            data: expert
+            data: faculty
         });
 
     } catch (error) {
-        console.error('Get expert by ID error:', error);
+        console.error('Get faculty by ID error:', error);
         res.status(500).json({
             success: false,
-            message: 'Lỗi hệ thống khi lấy thông tin chuyên gia'
+            message: 'Lỗi hệ thống khi lấy thông tin khoa'
         });
     }
 };
 
-const createExpert = async (req, res) => {
+const createFaculty = async (req, res) => {
     try {
         const {
-            personnelId,
-            specializations,
-            certifications,
-            maxAssignments
+            name,
+            code,
+            description,
+            dean,
+            viceDeans,
+            establishedDate,
+            contactInfo
         } = req.body;
 
-        // Check if personnel exists
-        const personnel = await Personnel.findById(personnelId);
-        if (!personnel) {
+        // Check if code already exists
+        const existingFaculty = await Faculty.findOne({ code: code.toUpperCase() });
+        if (existingFaculty) {
             return res.status(400).json({
                 success: false,
-                message: 'Nhân sự không tồn tại'
+                message: `Mã khoa ${code} đã tồn tại`
             });
         }
 
-        // Check if personnel is already an expert
-        const existingExpert = await Expert.findOne({ personnelId });
-        if (existingExpert) {
-            return res.status(400).json({
-                success: false,
-                message: 'Nhân sự này đã là chuyên gia'
-            });
+        // Validate dean if provided
+        if (dean) {
+            const deanPersonnel = await Personnel.findById(dean);
+            if (!deanPersonnel) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Trưởng khoa không tồn tại'
+                });
+            }
         }
 
-        // Generate expert code
-        const expertCode = await Expert.generateExpertCode();
+        // Validate vice deans if provided
+        if (viceDeans && viceDeans.length > 0) {
+            const viceDeanPersonnel = await Personnel.find({ _id: { $in: viceDeans } });
+            if (viceDeanPersonnel.length !== viceDeans.length) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Một số phó trưởng khoa không tồn tại'
+                });
+            }
+        }
 
-        const expert = new Expert({
-            personnelId,
-            expertCode,
-            specializations: specializations || [],
-            certifications: certifications || [],
-            workload: {
-                currentAssignments: 0,
-                maxAssignments: maxAssignments || 5
-            },
+        const faculty = new Faculty({
+            name: name.trim(),
+            code: code.toUpperCase().trim(),
+            description: description?.trim(),
+            dean,
+            viceDeans: viceDeans || [],
+            establishedDate: establishedDate ? new Date(establishedDate) : undefined,
+            contactInfo: contactInfo || {},
             createdBy: req.user.id
         });
 
-        await expert.save();
+        await faculty.save();
 
-        // Update personnel isExpert flag
-        personnel.isExpert = true;
-        await personnel.save();
-
-        await expert.populate([
-            { path: 'personnelId', select: 'fullName email employeeId position' },
+        await faculty.populate([
+            { path: 'dean', select: 'fullName email position' },
+            { path: 'viceDeans', select: 'fullName email position' },
             { path: 'createdBy', select: 'fullName email' }
         ]);
 
         res.status(201).json({
             success: true,
-            message: 'Tạo chuyên gia thành công',
-            data: expert
+            message: 'Tạo khoa thành công',
+            data: faculty
         });
 
     } catch (error) {
-        console.error('Create expert error:', error);
+        console.error('Create faculty error:', error);
         res.status(500).json({
             success: false,
-            message: 'Lỗi hệ thống khi tạo chuyên gia'
+            message: 'Lỗi hệ thống khi tạo khoa'
         });
     }
 };
 
-const updateExpert = async (req, res) => {
+const updateFaculty = async (req, res) => {
     try {
         const { id } = req.params;
         const updateData = req.body;
 
-        const expert = await Expert.findById(id);
-        if (!expert) {
+        const faculty = await Faculty.findById(id);
+        if (!faculty) {
             return res.status(404).json({
                 success: false,
-                message: 'Không tìm thấy chuyên gia'
+                message: 'Không tìm thấy khoa'
             });
         }
 
-        // Update allowed fields
-        const allowedFields = [
-            'specializations', 'certifications', 'availability',
-            'workload', 'status'
-        ];
-
-        allowedFields.forEach(field => {
-            if (updateData[field] !== undefined) {
-                expert[field] = updateData[field];
+        // Check code uniqueness if being updated
+        if (updateData.code && updateData.code.toUpperCase() !== faculty.code) {
+            const existingFaculty = await Faculty.findOne({
+                code: updateData.code.toUpperCase(),
+                _id: { $ne: id }
+            });
+            if (existingFaculty) {
+                return res.status(400).json({
+                    success: false,
+                    message: `Mã khoa ${updateData.code} đã tồn tại`
+                });
             }
-        });
+        }
 
-        await expert.save();
+        // Validate dean if being updated
+        if (updateData.dean) {
+            const deanPersonnel = await Personnel.findById(updateData.dean);
+            if (!deanPersonnel) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Trưởng khoa không tồn tại'
+                });
+            }
+        }
 
-        await expert.populate([
-            { path: 'personnelId', select: 'fullName email employeeId position' },
-            { path: 'assignedPrograms.programId', select: 'name code' },
-            { path: 'assignedStandards', select: 'name code' }
+        // Validate vice deans if being updated
+        if (updateData.viceDeans && updateData.viceDeans.length > 0) {
+            const viceDeanPersonnel = await Personnel.find({ _id: { $in: updateData.viceDeans } });
+            if (viceDeanPersonnel.length !== updateData.viceDeans.length) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Một số phó trưởng khoa không tồn tại'
+                });
+            }
+        }
+
+        // Update fields
+        Object.assign(faculty, updateData);
+        if (updateData.code) {
+            faculty.code = updateData.code.toUpperCase();
+        }
+
+        await faculty.save();
+
+        await faculty.populate([
+            { path: 'dean', select: 'fullName email position' },
+            { path: 'viceDeans', select: 'fullName email position' },
+            { path: 'createdBy', select: 'fullName email' }
         ]);
 
         res.json({
             success: true,
-            message: 'Cập nhật chuyên gia thành công',
-            data: expert
+            message: 'Cập nhật khoa thành công',
+            data: faculty
         });
 
     } catch (error) {
-        console.error('Update expert error:', error);
+        console.error('Update faculty error:', error);
         res.status(500).json({
             success: false,
-            message: 'Lỗi hệ thống khi cập nhật chuyên gia'
+            message: 'Lỗi hệ thống khi cập nhật khoa'
         });
     }
 };
 
-const deleteExpert = async (req, res) => {
+const deleteFaculty = async (req, res) => {
     try {
         const { id } = req.params;
 
-        const expert = await Expert.findById(id);
-        if (!expert) {
+        const faculty = await Faculty.findById(id);
+        if (!faculty) {
             return res.status(404).json({
                 success: false,
-                message: 'Không tìm thấy chuyên gia'
+                message: 'Không tìm thấy khoa'
             });
         }
 
-        // Check if expert has active assignments
-        if (expert.workload.currentAssignments > 0) {
+        // Check if faculty has personnel
+        const personnelCount = await Personnel.countDocuments({ facultyId: id });
+        if (personnelCount > 0) {
             return res.status(400).json({
                 success: false,
-                message: 'Không thể xóa chuyên gia đang có phân công'
+                message: 'Không thể xóa khoa đang có nhân sự'
             });
         }
 
-        // Update personnel isExpert flag
-        const personnel = await Personnel.findById(expert.personnelId);
-        if (personnel) {
-            personnel.isExpert = false;
-            await personnel.save();
-        }
-
-        await Expert.findByIdAndDelete(id);
+        await Faculty.findByIdAndDelete(id);
 
         res.json({
             success: true,
-            message: 'Xóa chuyên gia thành công'
+            message: 'Xóa khoa thành công'
         });
 
     } catch (error) {
-        console.error('Delete expert error:', error);
+        console.error('Delete faculty error:', error);
         res.status(500).json({
             success: false,
-            message: 'Lỗi hệ thống khi xóa chuyên gia'
+            message: 'Lỗi hệ thống khi xóa khoa'
         });
     }
 };
 
-const assignToProgram = async (req, res) => {
+const getFacultyPersonnel = async (req, res) => {
     try {
         const { id } = req.params;
-        const { programId, role } = req.body;
+        const { position } = req.query;
 
-        const expert = await Expert.findById(id);
-        if (!expert) {
+        const faculty = await Faculty.findById(id);
+        if (!faculty) {
             return res.status(404).json({
                 success: false,
-                message: 'Không tìm thấy chuyên gia'
+                message: 'Không tìm thấy khoa'
             });
         }
 
-        const program = await Program.findById(programId);
-        if (!program) {
-            return res.status(400).json({
-                success: false,
-                message: 'Chương trình không tồn tại'
-            });
-        }
+        let query = { facultyId: id, status: 'active' };
+        if (position) query.position = position;
 
-        // Check if already assigned
-        const existingAssignment = expert.assignedPrograms.find(
-            assignment => assignment.programId.toString() === programId
-        );
-
-        if (existingAssignment) {
-            return res.status(400).json({
-                success: false,
-                message: 'Chuyên gia đã được phân công cho chương trình này'
-            });
-        }
-
-        // Check workload
-        if (expert.workload.currentAssignments >= expert.workload.maxAssignments) {
-            return res.status(400).json({
-                success: false,
-                message: 'Chuyên gia đã đạt giới hạn phân công'
-            });
-        }
-
-        expert.assignedPrograms.push({
-            programId,
-            role: role || 'evaluator'
-        });
-
-        expert.workload.currentAssignments += 1;
-        await expert.save();
+        const personnel = await Personnel.find(query)
+            .select('fullName employeeId email position dateJoined')
+            .sort({ fullName: 1 });
 
         res.json({
             success: true,
-            message: 'Phân công chương trình thành công'
+            data: personnel
         });
 
     } catch (error) {
-        console.error('Assign to program error:', error);
+        console.error('Get faculty personnel error:', error);
         res.status(500).json({
             success: false,
-            message: 'Lỗi hệ thống khi phân công chương trình'
+            message: 'Lỗi hệ thống khi lấy danh sách nhân sự khoa'
         });
     }
 };
 
-const removeFromProgram = async (req, res) => {
-    try {
-        const { id, programId } = req.params;
-
-        const expert = await Expert.findById(id);
-        if (!expert) {
-            return res.status(404).json({
-                success: false,
-                message: 'Không tìm thấy chuyên gia'
-            });
-        }
-
-        expert.assignedPrograms = expert.assignedPrograms.filter(
-            assignment => assignment.programId.toString() !== programId
-        );
-
-        expert.workload.currentAssignments = Math.max(0, expert.workload.currentAssignments - 1);
-        await expert.save();
-
-        res.json({
-            success: true,
-            message: 'Hủy phân công chương trình thành công'
-        });
-
-    } catch (error) {
-        console.error('Remove from program error:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Lỗi hệ thống khi hủy phân công chương trình'
-        });
-    }
-};
-
-const assignStandards = async (req, res) => {
+const getFacultyStatistics = async (req, res) => {
     try {
         const { id } = req.params;
-        const { standardIds } = req.body;
 
-        const expert = await Expert.findById(id);
-        if (!expert) {
+        const faculty = await Faculty.findById(id);
+        if (!faculty) {
             return res.status(404).json({
                 success: false,
-                message: 'Không tìm thấy chuyên gia'
+                message: 'Không tìm thấy khoa'
             });
         }
 
-        // Validate standards exist
-        const standards = await Standard.find({ _id: { $in: standardIds } });
-        if (standards.length !== standardIds.length) {
-            return res.status(400).json({
-                success: false,
-                message: 'Một số tiêu chuẩn không tồn tại'
-            });
-        }
-
-        expert.assignedStandards = standardIds;
-        await expert.save();
-
-        await expert.populate('assignedStandards', 'name code');
-
-        res.json({
-            success: true,
-            message: 'Phân công tiêu chuẩn thành công',
-            data: expert.assignedStandards
-        });
-
-    } catch (error) {
-        console.error('Assign standards error:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Lỗi hệ thống khi phân công tiêu chuẩn'
-        });
-    }
-};
-
-const getAvailableExperts = async (req, res) => {
-    try {
-        const { specialization, maxWorkload } = req.query;
-
-        let query = {
-            status: 'active',
-            availability: 'available'
-        };
-
-        if (specialization) {
-            query['specializations.field'] = { $regex: specialization, $options: 'i' };
-        }
-
-        if (maxWorkload) {
-            query['$expr'] = {
-                $lt: ['$workload.currentAssignments', '$workload.maxAssignments']
-            };
-        }
-
-        const experts = await Expert.find(query)
-            .populate('personnelId', 'fullName email position')
-            .select('expertCode specializations workload availability')
-            .sort({ 'workload.currentAssignments': 1 });
-
-        res.json({
-            success: true,
-            data: experts
-        });
-
-    } catch (error) {
-        console.error('Get available experts error:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Lỗi hệ thống khi lấy danh sách chuyên gia khả dụng'
-        });
-    }
-};
-
-const getExpertStatistics = async (req, res) => {
-    try {
-        const stats = await Expert.aggregate([
+        const stats = await Personnel.aggregate([
+            { $match: { facultyId: mongoose.Types.ObjectId(id) } },
             {
                 $group: {
                     _id: null,
-                    totalExperts: { $sum: 1 },
-                    activeExperts: {
+                    totalPersonnel: { $sum: 1 },
+                    activePersonnel: {
                         $sum: { $cond: [{ $eq: ['$status', 'active'] }, 1, 0] }
                     },
-                    availableExperts: {
-                        $sum: { $cond: [{ $eq: ['$availability', 'available'] }, 1, 0] }
+                    lecturers: {
+                        $sum: { $cond: [{ $eq: ['$position', 'lecturer'] }, 1, 0] }
                     },
-                    totalAssignments: { $sum: '$workload.currentAssignments' }
+                    seniorLecturers: {
+                        $sum: { $cond: [{ $eq: ['$position', 'senior_lecturer'] }, 1, 0] }
+                    },
+                    associateProfessors: {
+                        $sum: { $cond: [{ $eq: ['$position', 'associate_professor'] }, 1, 0] }
+                    },
+                    professors: {
+                        $sum: { $cond: [{ $eq: ['$position', 'professor'] }, 1, 0] }
+                    }
                 }
             }
         ]);
 
         const result = stats[0] || {
-            totalExperts: 0,
-            activeExperts: 0,
-            availableExperts: 0,
-            totalAssignments: 0
+            totalPersonnel: 0,
+            activePersonnel: 0,
+            lecturers: 0,
+            seniorLecturers: 0,
+            associateProfessors: 0,
+            professors: 0
         };
 
         res.json({
@@ -478,23 +393,21 @@ const getExpertStatistics = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Get expert statistics error:', error);
+        console.error('Get faculty statistics error:', error);
         res.status(500).json({
             success: false,
-            message: 'Lỗi hệ thống khi lấy thống kê chuyên gia'
+            message: 'Lỗi hệ thống khi lấy thống kê khoa'
         });
     }
 };
 
 module.exports = {
-    getExperts,
-    getExpertById,
-    createExpert,
-    updateExpert,
-    deleteExpert,
-    assignToProgram,
-    removeFromProgram,
-    assignStandards,
-    getAvailableExperts,
-    getExpertStatistics
+    getFaculties,
+    getAllFaculties,
+    getFacultyById,
+    createFaculty,
+    updateFaculty,
+    deleteFaculty,
+    getFacultyPersonnel,
+    getFacultyStatistics
 };
