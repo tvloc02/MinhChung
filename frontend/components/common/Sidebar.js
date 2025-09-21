@@ -41,7 +41,7 @@ export default function Sidebar({ open, onClose }) {
             name: 'Trình ký minh chứng',
             icon: FileSignature,
             path: '/evidence-signing',
-            active: router.pathname.includes('/evidence-signing')
+            active: router.pathname.includes('/evidence/evidence-signing')
         },
         {
             name: 'Tra cứu minh chứng',
