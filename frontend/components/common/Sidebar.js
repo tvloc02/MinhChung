@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/router'
 import {
     BarChart3,
@@ -29,6 +29,10 @@ export default function Sidebar({ open, onClose }) {
     const router = useRouter()
     const [collapsed, setCollapsed] = useState(false)
     const [expandedMenus, setExpandedMenus] = useState({})
+    const scrollContainerRef = useRef(null)
+    const [isDragging, setIsDragging] = useState(false)
+    const [startY, setStartY] = useState(0)
+    const [scrollTop, setScrollTop] = useState(0)
 
     const sidebarItems = [
         {
@@ -38,10 +42,10 @@ export default function Sidebar({ open, onClose }) {
             active: router.pathname === '/dashboard'
         },
         {
-            name: 'Trình ký minh chứng',
+            name: 'Quy trình trình ký',
             icon: FileSignature,
-            path: '/evidence-signing',
-            active: router.pathname.includes('/evidence/evidence-signing')
+            path: '/evidence-workflow',
+            active: router.pathname.includes('/evidence-workflow')
         },
         {
             name: 'Tra cứu minh chứng',
@@ -139,6 +143,56 @@ export default function Sidebar({ open, onClose }) {
         setCollapsed(!collapsed)
     }
 
+    // Drag scroll functionality
+    const handleMouseDown = (e) => {
+        if (!scrollContainerRef.current) return
+        setIsDragging(true)
+        setStartY(e.pageY - scrollContainerRef.current.offsetTop)
+        setScrollTop(scrollContainerRef.current.scrollTop)
+        document.body.style.userSelect = 'none'
+    }
+
+    const handleMouseMove = (e) => {
+        if (!isDragging || !scrollContainerRef.current) return
+        e.preventDefault()
+        const y = e.pageY - scrollContainerRef.current.offsetTop
+        const walk = (y - startY) * 2 // Scroll speed multiplier
+        scrollContainerRef.current.scrollTop = scrollTop - walk
+    }
+
+    const handleMouseUp = () => {
+        setIsDragging(false)
+        document.body.style.userSelect = 'auto'
+    }
+
+    const handleMouseLeave = () => {
+        setIsDragging(false)
+        document.body.style.userSelect = 'auto'
+    }
+
+    useEffect(() => {
+        const handleGlobalMouseUp = () => {
+            setIsDragging(false)
+            document.body.style.userSelect = 'auto'
+        }
+
+        const handleGlobalMouseMove = (e) => {
+            if (isDragging) {
+                handleMouseMove(e)
+            }
+        }
+
+        if (isDragging) {
+            document.addEventListener('mousemove', handleGlobalMouseMove)
+            document.addEventListener('mouseup', handleGlobalMouseUp)
+        }
+
+        return () => {
+            document.removeEventListener('mousemove', handleGlobalMouseMove)
+            document.removeEventListener('mouseup', handleGlobalMouseUp)
+        }
+    }, [isDragging, startY, scrollTop])
+
     return (
         <>
             {/* Overlay for mobile */}
@@ -174,17 +228,31 @@ export default function Sidebar({ open, onClose }) {
                         </button>
                     </div>
 
-                    {/* Navigation */}
-                    <nav className="flex-1 px-2 py-4 space-y-1 overflow-y-auto">
+                    {/* Navigation with drag scroll */}
+                    <nav
+                        ref={scrollContainerRef}
+                        className={`flex-1 px-2 py-4 space-y-1 overflow-y-auto ${
+                            isDragging ? 'cursor-grabbing' : 'cursor-grab'
+                        }`}
+                        onMouseDown={handleMouseDown}
+                        onMouseMove={handleMouseMove}
+                        onMouseUp={handleMouseUp}
+                        onMouseLeave={handleMouseLeave}
+                        style={{
+                            scrollbarWidth: 'thin',
+                            scrollbarColor: '#CBD5E1 #F8FAFC'
+                        }}
+                    >
                         {sidebarItems.map((item, index) => {
-                            if (item.type === 'divider') {
-                                return null; // Remove the old divider logic
-                            }
-
                             return (
                                 <div key={index}>
                                     <button
-                                        onClick={() => {
+                                        onClick={(e) => {
+                                            // Prevent navigation if dragging
+                                            if (isDragging) {
+                                                e.preventDefault()
+                                                return
+                                            }
                                             if (item.hasSubmenu) {
                                                 toggleSubmenu(index)
                                             } else {
@@ -197,6 +265,7 @@ export default function Sidebar({ open, onClose }) {
                                                 : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                                         }`}
                                         title={collapsed ? item.name : ''}
+                                        onMouseDown={(e) => e.stopPropagation()} // Prevent drag on buttons
                                     >
                                         <item.icon className={`h-5 w-5 ${collapsed ? '' : 'mr-3'} flex-shrink-0`} />
                                         {!collapsed && (
@@ -217,12 +286,19 @@ export default function Sidebar({ open, onClose }) {
                                             {item.submenu.map((subItem, subIndex) => (
                                                 <button
                                                     key={subIndex}
-                                                    onClick={() => handleNavigation(subItem.path)}
+                                                    onClick={(e) => {
+                                                        if (isDragging) {
+                                                            e.preventDefault()
+                                                            return
+                                                        }
+                                                        handleNavigation(subItem.path)
+                                                    }}
                                                     className={`w-full flex items-center px-3 py-2 text-sm rounded-lg transition-colors ${
                                                         router.pathname === subItem.path
                                                             ? 'bg-blue-50 text-blue-700'
                                                             : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                                                     }`}
+                                                    onMouseDown={(e) => e.stopPropagation()}
                                                 >
                                                     <subItem.icon className="h-4 w-4 mr-3 flex-shrink-0" />
                                                     {subItem.name}
@@ -231,26 +307,35 @@ export default function Sidebar({ open, onClose }) {
                                         </div>
                                     )}
 
-                                    {/* Divider after each main menu item (except last and submenu items) */}
+                                    {/* Shorter divider - only text width */}
                                     {index < sidebarItems.length - 1 && !collapsed && (
-                                        <div className="my-2">
-                                            <hr className="border-gray-200" />
+                                        <div className="my-3 px-3">
+                                            <div className="h-px bg-gray-200 w-20"></div>
                                         </div>
                                     )}
                                 </div>
                             )
                         })}
                     </nav>
-
-                    {/* Footer */}
-                    <div className="p-4 border-t border-gray-200">
-                        {!collapsed && (
-                            <p className="text-xs text-gray-500 text-center">
-                                © 2025 CMC University
-                            </p>
-                        )}
-                    </div>
                 </div>
+
+                {/* Custom scrollbar styles */}
+                <style jsx>{`
+                    nav::-webkit-scrollbar {
+                        width: 6px;
+                    }
+                    nav::-webkit-scrollbar-track {
+                        background: #f8fafc;
+                        border-radius: 3px;
+                    }
+                    nav::-webkit-scrollbar-thumb {
+                        background: #cbd5e1;
+                        border-radius: 3px;
+                    }
+                    nav::-webkit-scrollbar-thumb:hover {
+                        background: #94a3b8;
+                    }
+                `}</style>
             </aside>
         </>
     )
