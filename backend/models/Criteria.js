@@ -1,3 +1,5 @@
+const mongoose = require('mongoose');
+
 const criteriaSchema = new mongoose.Schema({
     name: {
         type: String,
@@ -183,11 +185,4 @@ criteriaSchema.statics.findByProgramAndOrganization = function(programId, organi
 criteriaSchema.set('toJSON', { virtuals: true });
 criteriaSchema.set('toObject', { virtuals: true });
 
-const Criteria = mongoose.model('Criteria', criteriaSchema);
-
-module.exports = {
-    Program,
-    Organization,
-    Standard,
-    Criteria
-};
+module.exports = mongoose.model('Criteria', criteriaSchema);
