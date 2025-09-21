@@ -1,3 +1,5 @@
+const mongoose = require('mongoose');
+
 const standardSchema = new mongoose.Schema({
     name: {
         type: String,
@@ -152,4 +154,4 @@ standardSchema.statics.findByProgramAndOrganization = function(programId, organi
 standardSchema.set('toJSON', { virtuals: true });
 standardSchema.set('toObject', { virtuals: true });
 
-const Standard = mongoose.model('Standard', standardSchema);
+module.exports = mongoose.model('Standard', standardSchema);
