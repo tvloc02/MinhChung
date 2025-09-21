@@ -2,6 +2,9 @@ const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
 const User = require('../models/User');
+const Faculty = require('../models/Faculty');
+const Department = require('../models/Department');
+const UserGroup = require('../models/UserGroup');
 
 const generateToken = (userId) => {
     return jwt.sign({ userId }, process.env.JWT_SECRET || 'fallback-secret-key', {
@@ -13,7 +16,7 @@ const login = async (req, res) => {
     try {
         const { email, password, rememberMe } = req.body;
 
-        console.log('🔍 LOGIN DEBUG:');
+        console.log('🔑 LOGIN DEBUG:');
         console.log('Input email:', email);
         console.log('Remember me:', rememberMe);
 
@@ -24,7 +27,6 @@ const login = async (req, res) => {
             });
         }
 
-        // Find user using the static method
         const user = await User.findByEmailOrUsername(email);
 
         console.log('Found user:', user ? user.email : 'NOT FOUND');
@@ -33,14 +35,6 @@ const login = async (req, res) => {
             return res.status(401).json({
                 success: false,
                 message: 'Email không tồn tại trong hệ thống'
-            });
-        }
-
-        // Check if account is locked
-        if (user.isLocked) {
-            return res.status(423).json({
-                success: false,
-                message: `Tài khoản đã bị khóa do đăng nhập sai quá nhiều lần. Thử lại sau ${Math.ceil((user.lockUntil - Date.now()) / (1000 * 60))} phút.`
             });
         }
 
@@ -56,43 +50,22 @@ const login = async (req, res) => {
             fullName: user.fullName,
             role: user.role,
             status: user.status,
-            hasPassword: !!user.password,
-            loginAttempts: user.loginAttempts
+            hasPassword: !!user.password
         });
 
-        // Verify password
         const isPasswordValid = await user.comparePassword(password);
         console.log('Password verification:', isPasswordValid);
 
         if (!isPasswordValid) {
-            // Increment login attempts
-            await user.incrementLoginAttempts();
-
-            const attemptsLeft = 5 - (user.loginAttempts + 1);
-            let message = 'Mật khẩu không chính xác';
-
-            if (attemptsLeft > 0) {
-                message += `. Còn ${attemptsLeft} lần thử.`;
-            } else {
-                message = 'Tài khoản đã bị khóa do đăng nhập sai quá nhiều lần.';
-            }
-
             return res.status(401).json({
                 success: false,
-                message
+                message: 'Mật khẩu không chính xác'
             });
         }
 
-        // Reset login attempts on successful login
-        if (user.loginAttempts > 0) {
-            await user.resetLoginAttempts();
-        }
-
-        // Update last login
         user.lastLogin = new Date();
         await user.save();
 
-        // Generate token with appropriate expiration
         const tokenExpiry = rememberMe ? '30d' : '1d';
         const token = jwt.sign(
             { userId: user._id },
@@ -100,7 +73,6 @@ const login = async (req, res) => {
             { expiresIn: tokenExpiry }
         );
 
-        // Populate user data for response
         await user.populate([
             { path: 'facultyId', select: 'name code' },
             { path: 'departmentId', select: 'name code' },
@@ -108,13 +80,10 @@ const login = async (req, res) => {
             { path: 'positions.department', select: 'name code' }
         ]);
 
-        // Prepare user response (exclude sensitive data)
         const userResponse = user.toObject();
         delete userResponse.password;
         delete userResponse.resetPasswordToken;
         delete userResponse.resetPasswordExpires;
-        delete userResponse.loginAttempts;
-        delete userResponse.lockUntil;
 
         console.log('✅ Login successful for:', user.email);
 
@@ -139,11 +108,6 @@ const login = async (req, res) => {
 
 const logout = async (req, res) => {
     try {
-        // In a real application, you might want to:
-        // 1. Add token to blacklist
-        // 2. Update last activity
-        // 3. Clear any session data
-
         res.json({
             success: true,
             message: 'Đăng xuất thành công'
@@ -170,7 +134,6 @@ const register = async (req, res) => {
             positions
         } = req.body;
 
-        // Validation
         if (!email || !fullName || !password || !facultyId) {
             return res.status(400).json({
                 success: false,
@@ -185,7 +148,6 @@ const register = async (req, res) => {
             });
         }
 
-        // Check if user exists
         const existingUser = await User.findByEmailOrUsername(email);
         if (existingUser) {
             return res.status(400).json({
@@ -194,7 +156,6 @@ const register = async (req, res) => {
             });
         }
 
-        // Validate faculty
         const Faculty = require('../models/Faculty');
         const faculty = await Faculty.findById(facultyId);
         if (!faculty) {
@@ -204,7 +165,6 @@ const register = async (req, res) => {
             });
         }
 
-        // Validate department if provided
         if (departmentId) {
             const Department = require('../models/Department');
             const department = await Department.findById(departmentId);
@@ -216,7 +176,6 @@ const register = async (req, res) => {
             }
         }
 
-        // Prepare positions data
         const positionsData = positions && positions.length > 0 ?
             positions.map(pos => ({
                 ...pos,
@@ -231,7 +190,6 @@ const register = async (req, res) => {
                 startDate: new Date()
             }];
 
-        // Create new user
         const user = new User({
             email: email.toLowerCase().trim(),
             fullName: fullName.trim(),
@@ -241,22 +199,19 @@ const register = async (req, res) => {
             departmentId,
             role,
             positions: positionsData,
-            status: 'pending' // Requires activation
+            status: 'pending'
         });
 
         await user.save();
 
-        // Generate token
         const token = generateToken(user._id);
 
-        // Populate user data
         await user.populate([
             { path: 'facultyId', select: 'name code' },
             { path: 'departmentId', select: 'name code' },
             { path: 'positions.department', select: 'name code' }
         ]);
 
-        // Return response
         const userResponse = user.toObject();
 
         res.status(201).json({
@@ -296,17 +251,15 @@ const forgotPassword = async (req, res) => {
             });
         }
 
-        // Generate reset token
         const resetToken = crypto.randomBytes(20).toString('hex');
         user.resetPasswordToken = crypto
             .createHash('sha256')
             .update(resetToken)
             .digest('hex');
-        user.resetPasswordExpires = Date.now() + 10 * 60 * 1000; // 10 minutes
+        user.resetPasswordExpires = Date.now() + 10 * 60 * 1000;
 
         await user.save();
 
-        // For development, log the reset URL
         const resetUrl = `${process.env.CLIENT_URL || 'http://localhost:3000'}/reset-password/${resetToken}`;
         console.log('🔗 Password Reset URL:', resetUrl);
         console.log('📧 Send this URL to:', user.email);
@@ -345,7 +298,6 @@ const resetPassword = async (req, res) => {
             });
         }
 
-        // Hash the token to compare
         const hashedToken = crypto
             .createHash('sha256')
             .update(token)
@@ -363,14 +315,9 @@ const resetPassword = async (req, res) => {
             });
         }
 
-        // Update password
         user.password = newPassword;
         user.resetPasswordToken = undefined;
         user.resetPasswordExpires = undefined;
-
-        // Reset login attempts
-        user.loginAttempts = 0;
-        user.lockUntil = undefined;
 
         await user.save();
 
@@ -454,7 +401,7 @@ const getCurrentUser = async (req, res) => {
             .populate('departmentId', 'name code')
             .populate('userGroups', 'name code permissions signingPermissions')
             .populate('positions.department', 'name code')
-            .select('-password -resetPasswordToken -resetPasswordExpires -loginAttempts -lockUntil');
+            .select('-password -resetPasswordToken -resetPasswordExpires');
 
         if (!user) {
             return res.status(404).json({
@@ -463,7 +410,6 @@ const getCurrentUser = async (req, res) => {
             });
         }
 
-        // Calculate effective permissions from groups
         let effectivePermissions = {};
 
         if (user.userGroups && user.userGroups.length > 0) {
@@ -479,7 +425,6 @@ const getCurrentUser = async (req, res) => {
                             };
                         }
 
-                        // Merge permissions (OR operation)
                         Object.keys(perm.actions).forEach(action => {
                             if (perm.actions[action]) {
                                 effectivePermissions[perm.module][action] = true;
@@ -490,7 +435,6 @@ const getCurrentUser = async (req, res) => {
             });
         }
 
-        // Override with individual permissions
         if (user.individualPermissions && user.individualPermissions.length > 0) {
             user.individualPermissions.forEach(perm => {
                 if (!effectivePermissions[perm.module]) {
@@ -543,7 +487,6 @@ const updateProfile = async (req, res) => {
             });
         }
 
-        // Update allowed fields
         if (fullName) user.fullName = fullName.trim();
         if (phoneNumber) user.phoneNumber = phoneNumber.trim();
         if (specializations) user.specializations = specializations;
@@ -556,7 +499,6 @@ const updateProfile = async (req, res) => {
 
         await user.save();
 
-        // Return clean user object
         const updatedUser = user.toObject();
 
         res.json({
@@ -588,7 +530,7 @@ const verifyToken = async (req, res) => {
         try {
             const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback-secret-key');
             const user = await User.findById(decoded.userId)
-                .select('-password -resetPasswordToken -resetPasswordExpires -loginAttempts -lockUntil');
+                .select('-password -resetPasswordToken -resetPasswordExpires');
 
             if (!user || user.status !== 'active') {
                 return res.status(401).json({
@@ -619,12 +561,11 @@ const verifyToken = async (req, res) => {
     }
 };
 
-// Admin function to reset user password
 const resetAdminPassword = async (req, res) => {
     try {
         console.log('🔧 Resetting admin password...');
 
-        const admin = await User.findByEmailOrUsername('admin');
+        const admin = await User.findByEmailOrUsername('admin@cmc.edu.vn');
         if (!admin) {
             return res.status(404).json({
                 success: false,
@@ -634,10 +575,7 @@ const resetAdminPassword = async (req, res) => {
 
         console.log('Found admin:', admin.email);
 
-        // Reset password
         admin.password = 'admin123';
-        admin.loginAttempts = 0;
-        admin.lockUntil = undefined;
         await admin.save();
 
         console.log('✅ Admin password reset to: admin123');
