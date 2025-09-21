@@ -184,19 +184,26 @@ const userSchema = new mongoose.Schema({
         module: {
             type: String,
             enum: [
-                'so_trinh_ky', 'so_ky_duyet', 'tra_cuu_so', 'so_da_ban_hanh',
-                'kiem_tra', 'dong_dau', 'bao_cao', 'danh_muc_so',
-                'cau_hinh', 'du_lieu_don_vi'
+                'evidence',         // Quản lý minh chứng
+                'standards',        // Quản lý tiêu chuẩn
+                'criteria',         // Quản lý tiêu chí
+                'experts',          // Quản lý chuyên gia
+                'assessment',       // Đánh giá minh chứng
+                'reports',          // Báo cáo
+                'documents',        // Quản lý tài liệu
+                'workflow',         // Quy trình phê duyệt
+                'users',            // Quản lý người dùng
+                'configuration'     // Cấu hình hệ thống
             ]
         },
         actions: {
             view: { type: Boolean, default: false },    // Hiển thị
             create: { type: Boolean, default: false },  // Thêm
             edit: { type: Boolean, default: false },    // Sửa
-            delete: { type: Boolean, default: false }   // Xóa
+            delete: { type: Boolean, default: false },  // Xóa
         },
         restrictions: [{
-            type: String, // Ví dụ: 'own_faculty_only', 'own_department_only'
+            type: String, // Ví dụ: 'own_faculty_only', 'own_department_only', 'assigned_only'
         }]
     }],
 
