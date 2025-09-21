@@ -310,7 +310,7 @@ export default function Sidebar({ open, onClose }) {
                                     {/* Shorter divider - only text width */}
                                     {index < sidebarItems.length - 1 && !collapsed && (
                                         <div className="my-3 px-3">
-                                            <div className="h-px bg-gray-200 w-20"></div>
+                                            <div className="h-px bg-gray-200 w-50"></div>
                                         </div>
                                     )}
                                 </div>
