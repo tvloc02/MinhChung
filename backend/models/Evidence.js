@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 
-// Schema cho signingProcess (thêm vào schema Evidence hiện có)
+// Schema cho signingProcess
 const signingProcessSchema = new mongoose.Schema({
     signers: [{
         userId: {
@@ -59,12 +59,69 @@ const signingProcessSchema = new mongoose.Schema({
     }
 });
 
-// Cập nhật schema Evidence chính (thêm vào schema hiện có)
-const evidenceSchemaAddition = {
-    // Thêm vào schema Evidence hiện có
-    signingProcess: signingProcessSchema,
+// Schema chính cho Evidence
+const evidenceSchema = new mongoose.Schema({
+    // Thông tin cơ bản
+    name: {
+        type: String,
+        required: [true, 'Tên minh chứng là bắt buộc'],
+        trim: true,
+        maxlength: [300, 'Tên minh chứng không được quá 300 ký tự']
+    },
 
-    // Cập nhật status enum để bao gồm các trạng thái workflow mới
+    code: {
+        type: String,
+        required: [true, 'Mã minh chứng là bắt buộc'],
+        unique: true,
+        uppercase: true,
+        trim: true
+    },
+
+    description: {
+        type: String,
+        trim: true,
+        maxlength: [1000, 'Mô tả không được quá 1000 ký tự']
+    },
+
+    // Liên kết với tiêu chuẩn và tiêu chí
+    standardId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Standard',
+        required: [true, 'Tiêu chuẩn là bắt buộc']
+    },
+
+    criteriaId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Criteria',
+        required: [true, 'Tiêu chí là bắt buộc']
+    },
+
+    programId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Program',
+        required: [true, 'Chương trình đánh giá là bắt buộc']
+    },
+
+    organizationId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Organization',
+        required: [true, 'Tổ chức đánh giá là bắt buộc']
+    },
+
+    // Thông tin phân loại
+    type: {
+        type: String,
+        enum: ['document', 'data', 'system', 'process', 'other'],
+        default: 'document'
+    },
+
+    category: {
+        type: String,
+        enum: ['primary', 'secondary', 'supporting'],
+        default: 'primary'
+    },
+
+    // Trạng thái workflow
     status: {
         type: String,
         enum: [
@@ -78,22 +135,120 @@ const evidenceSchemaAddition = {
         default: 'draft'
     },
 
-    // Thêm các trường mới
+    // Thông tin workflow
+    signingProcess: signingProcessSchema,
+
+    // Files đính kèm
+    files: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'File'
+    }],
+
+    // Thông tin thời gian
+    deadline: Date,
+    submittedAt: Date,
+    approvedAt: Date,
     rejectedAt: Date,
     rejectionReason: String,
-    completedAt: Date
-};
+    completedAt: Date,
 
-// ===== INSTANCE METHODS =====
+    // Thông tin đánh giá
+    evaluation: {
+        score: {
+            type: Number,
+            min: 0,
+            max: 100
+        },
+        rating: {
+            type: String,
+            enum: ['excellent', 'good', 'satisfactory', 'needs_improvement', 'poor']
+        },
+        feedback: String,
+        evaluatedBy: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'User'
+        },
+        evaluatedAt: Date
+    },
 
-// Kiểm tra có thể khởi tạo trình ký không
+    // Thông tin người tạo và phân công
+    createdBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        required: true
+    },
+
+    assignedTo: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
+    },
+
+    updatedBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
+    },
+
+    // Metadata
+    metadata: {
+        version: {
+            type: Number,
+            default: 1
+        },
+        totalFiles: {
+            type: Number,
+            default: 0
+        },
+        totalSize: {
+            type: Number,
+            default: 0
+        },
+        tags: [String],
+        keywords: [String]
+    },
+
+    // Timestamps
+    createdAt: {
+        type: Date,
+        default: Date.now
+    },
+
+    updatedAt: {
+        type: Date,
+        default: Date.now
+    }
+});
+
+// Indexes
+evidenceSchema.index({ code: 1 });
+evidenceSchema.index({ standardId: 1, criteriaId: 1 });
+evidenceSchema.index({ status: 1, updatedAt: -1 });
+evidenceSchema.index({ 'signingProcess.signers.userId': 1, 'signingProcess.signers.status': 1 });
+evidenceSchema.index({ deadline: 1, status: 1 });
+evidenceSchema.index({ createdBy: 1, status: 1 });
+evidenceSchema.index({ assignedTo: 1, status: 1 });
+evidenceSchema.index({ programId: 1, organizationId: 1 });
+
+// Virtual fields
+evidenceSchema.virtual('workflowMetadata').get(function() {
+    if (!this.signingProcess) return null;
+
+    return {
+        totalSteps: this.signingProcess.signers.length,
+        currentStep: this.signingProcess.currentStep || 1,
+        completedSteps: this.signingProcess.signers.filter(s => s.status === 'signed').length,
+        isStuck: this.updatedAt < new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // 7 days
+        estimatedCompletionTime: this.getEstimatedCompletionTime(),
+        riskLevel: this.getRiskLevel()
+    };
+});
+
+// Instance methods
 evidenceSchema.methods.canInitiateSigning = function(userId) {
     return this.status === 'draft' &&
         (this.createdBy.toString() === userId.toString() ||
             this.assignedTo?.toString() === userId.toString());
 };
 
-// Kiểm tra user hiện tại có thể ký không
 evidenceSchema.methods.canUserSign = function(userId) {
     if (!this.signingProcess || !['signatures_inserted', 'in_progress'].includes(this.status)) {
         return false;
@@ -108,7 +263,6 @@ evidenceSchema.methods.canUserSign = function(userId) {
     return currentSigner && currentSigner.userId.toString() === userId.toString();
 };
 
-// Kiểm tra có thể hủy trình ký không
 evidenceSchema.methods.canCancelSigning = function(userId, userRole) {
     if (!this.signingProcess || this.status === 'completed') {
         return false;
@@ -118,14 +272,12 @@ evidenceSchema.methods.canCancelSigning = function(userId, userRole) {
         userRole === 'admin';
 };
 
-// Kiểm tra có thể cập nhật trình ký không
 evidenceSchema.methods.canUpdateSigning = function(userId, userRole) {
     if (!this.signingProcess ||
         !['pending_approval', 'signatures_inserted'].includes(this.status)) {
         return false;
     }
 
-    // Không thể cập nhật nếu đã có ai ký
     const hasSigned = this.signingProcess.signers.some(s => s.status === 'signed');
     if (hasSigned) return false;
 
@@ -133,14 +285,11 @@ evidenceSchema.methods.canUpdateSigning = function(userId, userRole) {
         userRole === 'admin';
 };
 
-// Kiểm tra cần chèn chữ ký không
 evidenceSchema.methods.requiresSignatureInsertion = function() {
     if (this.status !== 'pending_approval') return false;
-
     return this.files.some(file => file.mimeType === 'application/pdf');
 };
 
-// Lấy danh sách người ký tiếp theo
 evidenceSchema.methods.getNextSigners = function() {
     if (!this.signingProcess || this.status !== 'in_progress') {
         return [];
@@ -152,7 +301,6 @@ evidenceSchema.methods.getNextSigners = function() {
         .sort((a, b) => a.order - b.order);
 };
 
-// Lấy thông tin tiến độ ký
 evidenceSchema.methods.getSigningProgress = function() {
     if (!this.signingProcess) return null;
 
@@ -170,16 +318,12 @@ evidenceSchema.methods.getSigningProgress = function() {
     };
 };
 
-// Kiểm tra quá hạn
 evidenceSchema.methods.isOverdue = function() {
-    // Logic kiểm tra quá hạn dựa trên deadline
     if (!this.deadline) return false;
-
     return new Date() > new Date(this.deadline) &&
         !['completed', 'rejected'].includes(this.status);
 };
 
-// Lấy người ký hiện tại
 evidenceSchema.methods.getCurrentSigner = function() {
     if (!this.signingProcess || this.status !== 'in_progress') {
         return null;
@@ -191,27 +335,43 @@ evidenceSchema.methods.getCurrentSigner = function() {
     );
 };
 
-// Kiểm tra user có trong danh sách ký không
 evidenceSchema.methods.isUserInSigningProcess = function(userId) {
     if (!this.signingProcess) return false;
-
     return this.signingProcess.signers.some(signer =>
         signer.userId.toString() === userId.toString()
     );
 };
 
-// Lấy thông tin ký của user
 evidenceSchema.methods.getUserSigningInfo = function(userId) {
     if (!this.signingProcess) return null;
-
     return this.signingProcess.signers.find(signer =>
         signer.userId.toString() === userId.toString()
     );
 };
 
-// ===== STATIC METHODS =====
+evidenceSchema.methods.getEstimatedCompletionTime = function() {
+    if (!this.signingProcess) return null;
 
-// Lấy danh sách cần ký duyệt của user
+    const avgSigningTime = 2 * 24 * 60 * 60 * 1000; // 2 days per step
+    const remainingSteps = this.signingProcess.signers.filter(s => s.status === 'pending').length;
+
+    return new Date(Date.now() + (remainingSteps * avgSigningTime));
+};
+
+evidenceSchema.methods.getRiskLevel = function() {
+    if (this.status === 'completed') return 'none';
+    if (this.status === 'rejected') return 'high';
+
+    const daysSinceUpdate = Math.floor((Date.now() - this.updatedAt) / (24 * 60 * 60 * 1000));
+
+    if (daysSinceUpdate > 14) return 'high';
+    if (daysSinceUpdate > 7) return 'medium';
+    if (daysSinceUpdate > 3) return 'low';
+
+    return 'none';
+};
+
+// Static methods
 evidenceSchema.statics.getPendingApproval = function(userId) {
     return this.find({
         status: { $in: ['signatures_inserted', 'in_progress'] },
@@ -223,14 +383,13 @@ evidenceSchema.statics.getPendingApproval = function(userId) {
         }
     })
         .populate('files', 'originalName size mimeType')
-        .populate('createdBy', 'fullName position')
+        .populate('createdBy', 'fullName positions')
         .populate('standardId', 'name code')
         .populate('criteriaId', 'name code')
-        .populate('signingProcess.signers.userId', 'fullName position')
+        .populate('signingProcess.signers.userId', 'fullName positions')
         .sort({ 'signingProcess.initiatedAt': 1 });
 };
 
-// Lấy thống kê workflow
 evidenceSchema.statics.getStatistics = function(options = {}) {
     const {
         userId,
@@ -241,7 +400,6 @@ evidenceSchema.statics.getStatistics = function(options = {}) {
         criteriaId
     } = options;
 
-    // Build match query
     let matchQuery = {};
 
     if (dateFrom || dateTo) {
@@ -253,7 +411,6 @@ evidenceSchema.statics.getStatistics = function(options = {}) {
     if (standardId) matchQuery.standardId = mongoose.Types.ObjectId(standardId);
     if (criteriaId) matchQuery.criteriaId = mongoose.Types.ObjectId(criteriaId);
 
-    // Access control
     if (userRole !== 'admin') {
         matchQuery.$or = [
             { createdBy: mongoose.Types.ObjectId(userId) },
@@ -263,9 +420,7 @@ evidenceSchema.statics.getStatistics = function(options = {}) {
     }
 
     return this.aggregate([
-        {
-            $match: matchQuery
-        },
+        { $match: matchQuery },
         {
             $group: {
                 _id: '$status',
@@ -284,7 +439,6 @@ evidenceSchema.statics.getStatistics = function(options = {}) {
     ]);
 };
 
-// Tìm minh chứng theo workflow status với filter
 evidenceSchema.statics.findByWorkflowStatus = function(status, filters = {}) {
     let query = { status };
 
@@ -298,7 +452,6 @@ evidenceSchema.statics.findByWorkflowStatus = function(status, filters = {}) {
     if (filters.standardId) query.standardId = filters.standardId;
     if (filters.criteriaId) query.criteriaId = filters.criteriaId;
 
-    // Access control
     if (filters.userId && filters.userRole !== 'admin') {
         query.$or = [
             { createdBy: filters.userId },
@@ -309,15 +462,14 @@ evidenceSchema.statics.findByWorkflowStatus = function(status, filters = {}) {
 
     return this.find(query)
         .populate('files', 'originalName size mimeType')
-        .populate('createdBy', 'fullName position')
-        .populate('assignedTo', 'fullName position')
-        .populate('signingProcess.signers.userId', 'fullName position')
+        .populate('createdBy', 'fullName positions')
+        .populate('assignedTo', 'fullName positions')
+        .populate('signingProcess.signers.userId', 'fullName positions')
         .populate('standardId', 'name code')
         .populate('criteriaId', 'name code')
         .sort({ updatedAt: -1 });
 };
 
-// Lấy minh chứng sắp quá hạn
 evidenceSchema.statics.getUpcomingDeadlines = function(days = 7) {
     const futureDate = new Date();
     futureDate.setDate(futureDate.getDate() + days);
@@ -330,11 +482,10 @@ evidenceSchema.statics.getUpcomingDeadlines = function(days = 7) {
         }
     })
         .populate('createdBy', 'fullName')
-        .populate('signingProcess.signers.userId', 'fullName position')
+        .populate('signingProcess.signers.userId', 'fullName positions')
         .sort({ deadline: 1 });
 };
 
-// Lấy minh chứng bị stuck (quá lâu không có hoạt động)
 evidenceSchema.statics.getStuckEvidences = function(days = 30) {
     const pastDate = new Date();
     pastDate.setDate(pastDate.getDate() - days);
@@ -344,35 +495,28 @@ evidenceSchema.statics.getStuckEvidences = function(days = 30) {
         updatedAt: { $lt: pastDate }
     })
         .populate('createdBy', 'fullName')
-        .populate('signingProcess.signers.userId', 'fullName position')
+        .populate('signingProcess.signers.userId', 'fullName positions')
         .sort({ updatedAt: 1 });
 };
 
-// ===== MIDDLEWARE =====
-
-// Pre-save middleware để tự động cập nhật timestamps
+// Middleware
 evidenceSchema.pre('save', function(next) {
     if (this.isModified('status')) {
         this.updatedAt = new Date();
 
-        // Tự động set completedAt khi status chuyển thành completed
         if (this.status === 'completed' && !this.completedAt) {
             this.completedAt = new Date();
         }
 
-        // Tự động set rejectedAt khi status chuyển thành rejected
         if (this.status === 'rejected' && !this.rejectedAt) {
             this.rejectedAt = new Date();
         }
     }
-
     next();
 });
 
-// Post-save middleware để ghi log
 evidenceSchema.post('save', async function(doc, next) {
     try {
-        // Chỉ log khi status thay đổi
         if (this.isModified('status')) {
             const History = require('./History');
 
@@ -394,53 +538,10 @@ evidenceSchema.post('save', async function(doc, next) {
     } catch (error) {
         console.error('Post-save logging error:', error);
     }
-
     next();
 });
 
-// Virtual để tính toán workflow metadata
-evidenceSchema.virtual('workflowMetadata').get(function() {
-    if (!this.signingProcess) return null;
-
-    return {
-        totalSteps: this.signingProcess.signers.length,
-        currentStep: this.signingProcess.currentStep || 1,
-        completedSteps: this.signingProcess.signers.filter(s => s.status === 'signed').length,
-        isStuck: this.updatedAt < new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // 7 days
-        estimatedCompletionTime: this.getEstimatedCompletionTime(),
-        riskLevel: this.getRiskLevel()
-    };
-});
-
-// Tính thời gian hoàn thành ước tính
-evidenceSchema.methods.getEstimatedCompletionTime = function() {
-    if (!this.signingProcess) return null;
-
-    const avgSigningTime = 2 * 24 * 60 * 60 * 1000; // 2 days per step
-    const remainingSteps = this.signingProcess.signers.filter(s => s.status === 'pending').length;
-
-    return new Date(Date.now() + (remainingSteps * avgSigningTime));
-};
-
-// Tính mức độ rủi ro
-evidenceSchema.methods.getRiskLevel = function() {
-    if (this.status === 'completed') return 'none';
-    if (this.status === 'rejected') return 'high';
-
-    const daysSinceUpdate = Math.floor((Date.now() - this.updatedAt) / (24 * 60 * 60 * 1000));
-
-    if (daysSinceUpdate > 14) return 'high';
-    if (daysSinceUpdate > 7) return 'medium';
-    if (daysSinceUpdate > 3) return 'low';
-
-    return 'none';
-};
-
-// Index cho performance
-evidenceSchema.index({ status: 1, updatedAt: -1 });
-evidenceSchema.index({ 'signingProcess.signers.userId': 1, 'signingProcess.signers.status': 1 });
-evidenceSchema.index({ standardId: 1, criteriaId: 1 });
-evidenceSchema.index({ deadline: 1, status: 1 });
-evidenceSchema.index({ createdBy: 1, status: 1 });
+evidenceSchema.set('toJSON', { virtuals: true });
+evidenceSchema.set('toObject', { virtuals: true });
 
 module.exports = mongoose.model('Evidence', evidenceSchema);
