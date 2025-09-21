@@ -15,7 +15,9 @@ const historySchema = new mongoose.Schema({
             'upload', 'download',
             'sign', 'approve', 'reject',
             'publish', 'unpublish',
-            'export', 'import'
+            'export', 'import',
+            'status_change', 'digital_sign',
+            'evidence_approve', 'evidence_reject', 'evidence_cancel', 'evidence_initiate'
         ],
         required: [true, 'Hành động là bắt buộc']
     },
@@ -24,8 +26,9 @@ const historySchema = new mongoose.Schema({
         type: String,
         enum: [
             'auth', 'evidence', 'standards', 'criteria',
-            'experts', 'programs', 'organizations',
-            'files', 'reports', 'users', 'configuration'
+            'experts', 'assessment', 'reports', 'documents',
+            'workflow', 'users', 'configuration', 'evidence_workflow',
+            'programs', 'organizations', 'files'
         ],
         required: [true, 'Module là bắt buộc']
     },
@@ -35,7 +38,8 @@ const historySchema = new mongoose.Schema({
         enum: [
             'Evidence', 'Standard', 'Criteria', 'Expert',
             'Program', 'Organization', 'File', 'User',
-            'AssessmentProgram', 'SigningInfo'
+            'AssessmentProgram', 'SigningInfo', 'Faculty',
+            'Department', 'Personnel', 'UserGroup'
         ]
     },
 
@@ -52,7 +56,16 @@ const historySchema = new mongoose.Schema({
     details: {
         oldValues: mongoose.Schema.Types.Mixed,
         newValues: mongoose.Schema.Types.Mixed,
-        metadata: mongoose.Schema.Types.Mixed
+        metadata: mongoose.Schema.Types.Mixed,
+        oldStatus: String,
+        newStatus: String,
+        hasSigningProcess: Boolean,
+        signedFiles: Number,
+        reason: String,
+        location: String,
+        timestamp: Date,
+        signatureLevel: String,
+        error: String
     },
 
     ipAddress: {
@@ -68,7 +81,6 @@ const historySchema = new mongoose.Schema({
     },
 
     userAgent: String,
-
     sessionId: String,
 
     status: {
