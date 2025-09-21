@@ -1,5 +1,7 @@
 const UserGroup = require('../models/UserGroup');
 const User = require('../models/User');
+const Faculty = require('../models/Faculty');
+const Department = require('../models/Department');
 
 const getUserGroups = async (req, res) => {
     try {
@@ -8,6 +10,9 @@ const getUserGroups = async (req, res) => {
             limit = 10,
             search,
             status,
+            organizationLevel,
+            facultyId,
+            departmentId,
             sortBy = 'createdAt',
             sortOrder = 'desc'
         } = req.query;
@@ -27,12 +32,17 @@ const getUserGroups = async (req, res) => {
         }
 
         if (status) query.status = status;
+        if (organizationLevel) query.organizationLevel = organizationLevel;
+        if (facultyId) query.facultyId = facultyId;
+        if (departmentId) query.departmentId = departmentId;
 
         const sortOptions = {};
         sortOptions[sortBy] = sortOrder === 'asc' ? 1 : -1;
 
         const [userGroups, total] = await Promise.all([
             UserGroup.find(query)
+                .populate('facultyId', 'name code')
+                .populate('departmentId', 'name code')
                 .populate('createdBy', 'fullName email')
                 .sort(sortOptions)
                 .skip(skip)
@@ -44,7 +54,8 @@ const getUserGroups = async (req, res) => {
         const groupsWithMemberCount = await Promise.all(
             userGroups.map(async (group) => {
                 const memberCount = await User.countDocuments({
-                    userGroups: group._id
+                    userGroups: group._id,
+                    status: 'active'
                 });
                 return {
                     ...group.toObject(),
@@ -78,8 +89,17 @@ const getUserGroups = async (req, res) => {
 
 const getAllUserGroups = async (req, res) => {
     try {
-        const userGroups = await UserGroup.find({ status: 'active' })
-            .select('name code description')
+        const { organizationLevel, facultyId, departmentId } = req.query;
+
+        let query = { status: 'active' };
+        if (organizationLevel) query.organizationLevel = organizationLevel;
+        if (facultyId) query.facultyId = facultyId;
+        if (departmentId) query.departmentId = departmentId;
+
+        const userGroups = await UserGroup.find(query)
+            .populate('facultyId', 'name code')
+            .populate('departmentId', 'name code')
+            .select('name code description organizationLevel facultyId departmentId')
             .sort({ name: 1 });
 
         res.json({
@@ -101,6 +121,8 @@ const getUserGroupById = async (req, res) => {
         const { id } = req.params;
 
         const userGroup = await UserGroup.findById(id)
+            .populate('facultyId', 'name code description')
+            .populate('departmentId', 'name code type description')
             .populate('createdBy', 'fullName email');
 
         if (!userGroup) {
@@ -114,7 +136,10 @@ const getUserGroupById = async (req, res) => {
         const members = await User.find({
             userGroups: id,
             status: 'active'
-        }).select('fullName email role');
+        })
+            .populate('facultyId', 'name code')
+            .populate('departmentId', 'name code')
+            .select('fullName email role facultyId departmentId positions');
 
         res.json({
             success: true,
@@ -139,7 +164,15 @@ const createUserGroup = async (req, res) => {
             name,
             code,
             description,
-            permissions
+            organizationLevel,
+            facultyId,
+            departmentId,
+            permissions,
+            signingPermissions,
+            priority,
+            notificationSettings,
+            autoAssignmentRules,
+            tags
         } = req.body;
 
         // Check if code already exists
@@ -151,29 +184,41 @@ const createUserGroup = async (req, res) => {
             });
         }
 
-        // Validate permissions structure
-        if (permissions && !Array.isArray(permissions)) {
-            return res.status(400).json({
-                success: false,
-                message: 'Permissions phải là một mảng'
-            });
+        // Validate faculty if provided
+        if (facultyId) {
+            const faculty = await Faculty.findById(facultyId);
+            if (!faculty) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Khoa không tồn tại'
+                });
+            }
         }
 
-        const validModules = ['evidence', 'standards', 'criteria', 'experts', 'reports', 'users', 'configuration'];
-        const validActions = ['create', 'read', 'update', 'delete', 'approve', 'sign', 'publish'];
+        // Validate department if provided
+        if (departmentId) {
+            const department = await Department.findById(departmentId);
+            if (!department) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Bộ môn không tồn tại'
+                });
+            }
+        }
 
-        if (permissions) {
+        // Validate permissions structure
+        if (permissions && Array.isArray(permissions)) {
+            const validModules = [
+                'so_trinh_ky', 'so_ky_duyet', 'tra_cuu_so', 'so_da_ban_hanh',
+                'kiem_tra', 'dong_dau', 'bao_cao', 'danh_muc_so',
+                'cau_hinh', 'du_lieu_don_vi'
+            ];
+
             for (const permission of permissions) {
                 if (!validModules.includes(permission.module)) {
                     return res.status(400).json({
                         success: false,
                         message: `Module ${permission.module} không hợp lệ`
-                    });
-                }
-                if (permission.actions && !permission.actions.every(action => validActions.includes(action))) {
-                    return res.status(400).json({
-                        success: false,
-                        message: 'Một số action không hợp lệ'
                     });
                 }
             }
@@ -183,13 +228,34 @@ const createUserGroup = async (req, res) => {
             name: name.trim(),
             code: code.toUpperCase().trim(),
             description: description?.trim(),
+            organizationLevel: organizationLevel || 'university',
+            facultyId: facultyId || null,
+            departmentId: departmentId || null,
             permissions: permissions || [],
+            signingPermissions: signingPermissions || {
+                canSign: false,
+                canStamp: false,
+                allowedDocumentTypes: [],
+                approvalLevel: 1
+            },
+            priority: priority || 1,
+            notificationSettings: notificationSettings || {
+                emailNotifications: true,
+                systemNotifications: true,
+                events: []
+            },
+            autoAssignmentRules: autoAssignmentRules || [],
+            tags: tags || [],
             createdBy: req.user.id
         });
 
         await userGroup.save();
 
-        await userGroup.populate('createdBy', 'fullName email');
+        await userGroup.populate([
+            { path: 'facultyId', select: 'name code' },
+            { path: 'departmentId', select: 'name code' },
+            { path: 'createdBy', select: 'fullName email' }
+        ]);
 
         res.status(201).json({
             success: true,
@@ -233,36 +299,53 @@ const updateUserGroup = async (req, res) => {
             }
         }
 
-        // Validate permissions if being updated
-        if (updateData.permissions) {
-            const validModules = ['evidence', 'standards', 'criteria', 'experts', 'reports', 'users', 'configuration'];
-            const validActions = ['create', 'read', 'update', 'delete', 'approve', 'sign', 'publish'];
+        // Validate faculty if being updated
+        if (updateData.facultyId) {
+            const faculty = await Faculty.findById(updateData.facultyId);
+            if (!faculty) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Khoa không tồn tại'
+                });
+            }
+        }
 
-            for (const permission of updateData.permissions) {
-                if (!validModules.includes(permission.module)) {
-                    return res.status(400).json({
-                        success: false,
-                        message: `Module ${permission.module} không hợp lệ`
-                    });
-                }
-                if (permission.actions && !permission.actions.every(action => validActions.includes(action))) {
-                    return res.status(400).json({
-                        success: false,
-                        message: 'Một số action không hợp lệ'
-                    });
-                }
+        // Validate department if being updated
+        if (updateData.departmentId) {
+            const department = await Department.findById(updateData.departmentId);
+            if (!department) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Bộ môn không tồn tại'
+                });
             }
         }
 
         // Update fields
-        Object.assign(userGroup, updateData);
-        if (updateData.code) {
-            userGroup.code = updateData.code.toUpperCase();
-        }
+        const allowedFields = [
+            'name', 'code', 'description', 'organizationLevel',
+            'facultyId', 'departmentId', 'permissions', 'signingPermissions',
+            'priority', 'notificationSettings', 'autoAssignmentRules', 'tags', 'status'
+        ];
 
+        allowedFields.forEach(field => {
+            if (updateData[field] !== undefined) {
+                if (field === 'code') {
+                    userGroup[field] = updateData[field].toUpperCase();
+                } else {
+                    userGroup[field] = updateData[field];
+                }
+            }
+        });
+
+        userGroup.updatedBy = req.user.id;
         await userGroup.save();
 
-        await userGroup.populate('createdBy', 'fullName email');
+        await userGroup.populate([
+            { path: 'facultyId', select: 'name code' },
+            { path: 'departmentId', select: 'name code' },
+            { path: 'createdBy', select: 'fullName email' }
+        ]);
 
         res.json({
             success: true,
@@ -296,7 +379,7 @@ const deleteUserGroup = async (req, res) => {
         if (memberCount > 0) {
             return res.status(400).json({
                 success: false,
-                message: 'Không thể xóa nhóm đang có thành viên'
+                message: 'Không thể xóa nhóm đang có thành viên. Vui lòng chuyển thành viên sang nhóm khác trước.'
             });
         }
 
@@ -336,12 +419,31 @@ const addMembers = async (req, res) => {
             });
         }
 
-        // Check if users exist
-        const users = await User.find({ _id: { $in: userIds } });
+        // Check if users exist and can join this group
+        const users = await User.find({
+            _id: { $in: userIds },
+            status: 'active'
+        });
+
         if (users.length !== userIds.length) {
             return res.status(400).json({
                 success: false,
-                message: 'Một số người dùng không tồn tại'
+                message: 'Một số người dùng không tồn tại hoặc không hoạt động'
+            });
+        }
+
+        // Check organization level restrictions
+        const invalidUsers = [];
+        for (const user of users) {
+            if (!userGroup.canUserJoin(user)) {
+                invalidUsers.push(user.fullName);
+            }
+        }
+
+        if (invalidUsers.length > 0) {
+            return res.status(400).json({
+                success: false,
+                message: `Những người dùng sau không thể tham gia nhóm do ràng buộc tổ chức: ${invalidUsers.join(', ')}`
             });
         }
 
@@ -350,6 +452,9 @@ const addMembers = async (req, res) => {
             { _id: { $in: userIds } },
             { $addToSet: { userGroups: id } }
         );
+
+        // Update group statistics
+        await userGroup.updateStatistics();
 
         res.json({
             success: true,
@@ -391,6 +496,9 @@ const removeMembers = async (req, res) => {
             { $pull: { userGroups: id } }
         );
 
+        // Update group statistics
+        await userGroup.updateStatistics();
+
         res.json({
             success: true,
             message: `Loại bỏ ${userIds.length} thành viên khỏi nhóm thành công`
@@ -408,7 +516,13 @@ const removeMembers = async (req, res) => {
 const getGroupMembers = async (req, res) => {
     try {
         const { id } = req.params;
-        const { page = 1, limit = 20 } = req.query;
+        const {
+            page = 1,
+            limit = 20,
+            search,
+            position,
+            facultyId
+        } = req.query;
 
         const userGroup = await UserGroup.findById(id);
         if (!userGroup) {
@@ -422,18 +536,47 @@ const getGroupMembers = async (req, res) => {
         const limitNum = parseInt(limit);
         const skip = (pageNum - 1) * limitNum;
 
+        let query = { userGroups: id };
+
+        // Search filter
+        if (search) {
+            query.$or = [
+                { fullName: { $regex: search, $options: 'i' } },
+                { email: { $regex: search, $options: 'i' } }
+            ];
+        }
+
+        // Position filter
+        if (position) {
+            query['positions.title'] = position;
+            query['positions.isActive'] = true;
+        }
+
+        // Faculty filter
+        if (facultyId) {
+            query.facultyId = facultyId;
+        }
+
         const [members, total] = await Promise.all([
-            User.find({ userGroups: id })
-                .select('fullName email role status lastLogin')
+            User.find(query)
+                .populate('facultyId', 'name code')
+                .populate('departmentId', 'name code')
+                .populate('positions.department', 'name code')
+                .select('fullName email role status lastLogin facultyId departmentId positions digitalSignature.isActive')
                 .sort({ fullName: 1 })
                 .skip(skip)
                 .limit(limitNum),
-            User.countDocuments({ userGroups: id })
+            User.countDocuments(query)
         ]);
 
         res.json({
             success: true,
             data: {
+                groupInfo: {
+                    name: userGroup.name,
+                    code: userGroup.code,
+                    organizationLevel: userGroup.organizationLevel
+                },
                 members,
                 pagination: {
                     current: pageNum,
@@ -456,38 +599,18 @@ const getGroupMembers = async (req, res) => {
 
 const getPermissionMatrix = async (req, res) => {
     try {
-        const modules = ['evidence', 'standards', 'criteria', 'experts', 'reports', 'users', 'configuration'];
-        const actions = ['create', 'read', 'update', 'delete', 'approve', 'sign', 'publish'];
+        const { organizationLevel, facultyId, departmentId } = req.query;
 
-        const userGroups = await UserGroup.find({ status: 'active' })
-            .select('name code permissions')
-            .sort({ name: 1 });
+        let query = { status: 'active' };
+        if (organizationLevel) query.organizationLevel = organizationLevel;
+        if (facultyId) query.facultyId = facultyId;
+        if (departmentId) query.departmentId = departmentId;
 
-        const matrix = modules.map(module => {
-            const modulePermissions = {
-                module,
-                groups: {}
-            };
-
-            userGroups.forEach(group => {
-                const groupPermission = group.permissions.find(p => p.module === module);
-                modulePermissions.groups[group.code] = {
-                    groupName: group.name,
-                    actions: groupPermission ? groupPermission.actions : []
-                };
-            });
-
-            return modulePermissions;
-        });
+        const matrix = await UserGroup.getPermissionMatrix();
 
         res.json({
             success: true,
-            data: {
-                matrix,
-                modules,
-                actions,
-                groups: userGroups.map(g => ({ code: g.code, name: g.name }))
-            }
+            data: matrix
         });
 
     } catch (error) {
@@ -495,6 +618,182 @@ const getPermissionMatrix = async (req, res) => {
         res.status(500).json({
             success: false,
             message: 'Lỗi hệ thống khi lấy ma trận phân quyền'
+        });
+    }
+};
+
+const updateGroupPermissions = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { permissions } = req.body;
+
+        if (!Array.isArray(permissions)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Permissions phải là một mảng'
+            });
+        }
+
+        const userGroup = await UserGroup.findById(id);
+        if (!userGroup) {
+            return res.status(404).json({
+                success: false,
+                message: 'Không tìm thấy nhóm người dùng'
+            });
+        }
+
+        // Validate permissions
+        const validModules = [
+            'so_trinh_ky', 'so_ky_duyet', 'tra_cuu_so', 'so_da_ban_hanh',
+            'kiem_tra', 'dong_dau', 'bao_cao', 'danh_muc_so',
+            'cau_hinh', 'du_lieu_don_vi'
+        ];
+
+        for (const permission of permissions) {
+            if (!validModules.includes(permission.module)) {
+                return res.status(400).json({
+                    success: false,
+                    message: `Module ${permission.module} không hợp lệ`
+                });
+            }
+        }
+
+        userGroup.permissions = permissions;
+        userGroup.updatedBy = req.user.id;
+        await userGroup.save();
+
+        res.json({
+            success: true,
+            message: 'Cập nhật quyền nhóm thành công',
+            data: {
+                groupId: id,
+                permissions: userGroup.permissions
+            }
+        });
+
+    } catch (error) {
+        console.error('Update group permissions error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Lỗi hệ thống khi cập nhật quyền nhóm'
+        });
+    }
+};
+
+const copyGroupPermissions = async (req, res) => {
+    try {
+        const { sourceId, targetIds } = req.body;
+
+        if (!Array.isArray(targetIds) || targetIds.length === 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'Danh sách nhóm đích không hợp lệ'
+            });
+        }
+
+        const sourceGroup = await UserGroup.findById(sourceId);
+        if (!sourceGroup) {
+            return res.status(404).json({
+                success: false,
+                message: 'Không tìm thấy nhóm nguồn'
+            });
+        }
+
+        const targetGroups = await UserGroup.find({
+            _id: { $in: targetIds },
+            status: 'active'
+        });
+
+        if (targetGroups.length !== targetIds.length) {
+            return res.status(400).json({
+                success: false,
+                message: 'Một số nhóm đích không tồn tại'
+            });
+        }
+
+        // Copy permissions
+        await UserGroup.updateMany(
+            { _id: { $in: targetIds } },
+            {
+                $set: {
+                    permissions: sourceGroup.permissions,
+                    updatedBy: req.user.id,
+                    updatedAt: new Date()
+                }
+            }
+        );
+
+        res.json({
+            success: true,
+            message: `Sao chép quyền thành công cho ${targetGroups.length} nhóm`
+        });
+
+    } catch (error) {
+        console.error('Copy group permissions error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Lỗi hệ thống khi sao chép quyền nhóm'
+        });
+    }
+};
+
+const getGroupStatistics = async (req, res) => {
+    try {
+        const { organizationLevel, facultyId, departmentId } = req.query;
+
+        let matchStage = { status: 'active' };
+        if (organizationLevel) matchStage.organizationLevel = organizationLevel;
+        if (facultyId) matchStage.facultyId = mongoose.Types.ObjectId(facultyId);
+        if (departmentId) matchStage.departmentId = mongoose.Types.ObjectId(departmentId);
+
+        const stats = await UserGroup.aggregate([
+            { $match: matchStage },
+            {
+                $group: {
+                    _id: null,
+                    totalGroups: { $sum: 1 },
+                    groupsByLevel: {
+                        $push: '$organizationLevel'
+                    },
+                    groupsWithSigning: {
+                        $sum: { $cond: [{ $eq: ['$signingPermissions.canSign', true] }, 1, 0] }
+                    },
+                    averagePermissions: {
+                        $avg: { $size: '$permissions' }
+                    }
+                }
+            }
+        ]);
+
+        // Organization level breakdown
+        const levelStats = await UserGroup.aggregate([
+            { $match: matchStage },
+            {
+                $group: {
+                    _id: '$organizationLevel',
+                    count: { $sum: 1 }
+                }
+            }
+        ]);
+
+        const result = stats[0] || {
+            totalGroups: 0,
+            groupsWithSigning: 0,
+            averagePermissions: 0
+        };
+
+        result.levelStats = levelStats;
+
+        res.json({
+            success: true,
+            data: result
+        });
+
+    } catch (error) {
+        console.error('Get group statistics error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Lỗi hệ thống khi lấy thống kê nhóm'
         });
     }
 };
@@ -509,5 +808,8 @@ module.exports = {
     addMembers,
     removeMembers,
     getGroupMembers,
-    getPermissionMatrix
+    getPermissionMatrix,
+    updateGroupPermissions,
+    copyGroupPermissions,
+    getGroupStatistics
 };
