@@ -11,11 +11,11 @@ const generateToken = (userId) => {
 
 const login = async (req, res) => {
     try {
-        const { email, password } = req.body;
+        const { email, password, rememberMe } = req.body;
 
         console.log('🔍 LOGIN DEBUG:');
         console.log('Input email:', email);
-        console.log('Input password:', password);
+        console.log('Remember me:', rememberMe);
 
         if (!email || !password) {
             return res.status(400).json({
@@ -24,25 +24,9 @@ const login = async (req, res) => {
             });
         }
 
-        // Xử lý email linh hoạt - tìm theo nhiều cách
-        const inputEmail = email.toLowerCase().trim();
-        const emailWithoutDomain = inputEmail.replace('@cmc.edu.vn', '');
-        const emailWithDomain = emailWithoutDomain.includes('@') ? emailWithoutDomain : `${emailWithoutDomain}@cmc.edu.vn`;
+        // Find user using the static method
+        const user = await User.findByEmailOrUsername(email);
 
-        // Tìm user theo nhiều cách
-        const user = await User.findOne({
-            $or: [
-                { email: inputEmail },          // Input chính xác
-                { email: emailWithoutDomain },  // Chỉ username
-                { email: emailWithDomain }      // Thêm domain
-            ]
-        });
-
-        console.log('Search patterns:', {
-            inputEmail,
-            emailWithoutDomain,
-            emailWithDomain
-        });
         console.log('Found user:', user ? user.email : 'NOT FOUND');
 
         if (!user) {
@@ -52,14 +36,13 @@ const login = async (req, res) => {
             });
         }
 
-        console.log('User details:', {
-            email: user.email,
-            fullName: user.fullName,
-            role: user.role,
-            status: user.status,
-            hasPassword: !!user.password,
-            passwordLength: user.password ? user.password.length : 0
-        });
+        // Check if account is locked
+        if (user.isLocked) {
+            return res.status(423).json({
+                success: false,
+                message: `Tài khoản đã bị khóa do đăng nhập sai quá nhiều lần. Thử lại sau ${Math.ceil((user.lockUntil - Date.now()) / (1000 * 60))} phút.`
+            });
+        }
 
         if (user.status !== 'active') {
             return res.status(401).json({
@@ -68,59 +51,70 @@ const login = async (req, res) => {
             });
         }
 
-        // Debug password comparison chi tiết
-        console.log('Password comparison:');
-        console.log('Input password:', password);
-        console.log('Stored hash:', user.password.substring(0, 20) + '...');
+        console.log('User details:', {
+            email: user.email,
+            fullName: user.fullName,
+            role: user.role,
+            status: user.status,
+            hasPassword: !!user.password,
+            loginAttempts: user.loginAttempts
+        });
 
-        // Test trực tiếp với bcrypt
-        const directBcryptCheck = await bcrypt.compare(password, user.password);
-        console.log('Direct bcrypt.compare result:', directBcryptCheck);
+        // Verify password
+        const isPasswordValid = await user.comparePassword(password);
+        console.log('Password verification:', isPasswordValid);
 
-        // Test với user method
-        const userMethodCheck = await user.comparePassword(password);
-        console.log('User.comparePassword result:', userMethodCheck);
+        if (!isPasswordValid) {
+            // Increment login attempts
+            await user.incrementLoginAttempts();
 
-        // Nếu cả 2 đều false, có thể password sai
-        if (!userMethodCheck) {
-            console.log('❌ Password verification failed');
+            const attemptsLeft = 5 - (user.loginAttempts + 1);
+            let message = 'Mật khẩu không chính xác';
 
-            // Tạm thời - nếu password là 'admin123' thì reset
-            if (password === 'admin123' && user.email.includes('admin')) {
-                console.log('🔧 Detected admin123 password, resetting...');
-                user.password = 'admin123';
-                await user.save();
-                console.log('✅ Admin password reset successfully');
-
-                // Thử lại
-                const retryCheck = await user.comparePassword('admin123');
-                console.log('Retry check after reset:', retryCheck);
-
-                if (!retryCheck) {
-                    return res.status(500).json({
-                        success: false,
-                        message: 'Lỗi hệ thống xác thực'
-                    });
-                }
+            if (attemptsLeft > 0) {
+                message += `. Còn ${attemptsLeft} lần thử.`;
             } else {
-                return res.status(401).json({
-                    success: false,
-                    message: 'Mật khẩu không chính xác'
-                });
+                message = 'Tài khoản đã bị khóa do đăng nhập sai quá nhiều lần.';
             }
+
+            return res.status(401).json({
+                success: false,
+                message
+            });
+        }
+
+        // Reset login attempts on successful login
+        if (user.loginAttempts > 0) {
+            await user.resetLoginAttempts();
         }
 
         // Update last login
         user.lastLogin = new Date();
         await user.save();
 
-        const token = generateToken(user._id);
+        // Generate token with appropriate expiration
+        const tokenExpiry = rememberMe ? '30d' : '1d';
+        const token = jwt.sign(
+            { userId: user._id },
+            process.env.JWT_SECRET || 'fallback-secret-key',
+            { expiresIn: tokenExpiry }
+        );
 
-        // Remove sensitive fields
+        // Populate user data for response
+        await user.populate([
+            { path: 'facultyId', select: 'name code' },
+            { path: 'departmentId', select: 'name code' },
+            { path: 'userGroups', select: 'name code permissions' },
+            { path: 'positions.department', select: 'name code' }
+        ]);
+
+        // Prepare user response (exclude sensitive data)
         const userResponse = user.toObject();
         delete userResponse.password;
         delete userResponse.resetPasswordToken;
         delete userResponse.resetPasswordExpires;
+        delete userResponse.loginAttempts;
+        delete userResponse.lockUntil;
 
         console.log('✅ Login successful for:', user.email);
 
@@ -129,7 +123,8 @@ const login = async (req, res) => {
             message: 'Đăng nhập thành công',
             data: {
                 token,
-                user: userResponse
+                user: userResponse,
+                tokenExpiry: rememberMe ? '30 ngày' : '1 ngày'
             }
         });
 
@@ -144,6 +139,11 @@ const login = async (req, res) => {
 
 const logout = async (req, res) => {
     try {
+        // In a real application, you might want to:
+        // 1. Add token to blacklist
+        // 2. Update last activity
+        // 3. Clear any session data
+
         res.json({
             success: true,
             message: 'Đăng xuất thành công'
@@ -159,13 +159,22 @@ const logout = async (req, res) => {
 
 const register = async (req, res) => {
     try {
-        const { email, fullName, password, role = 'staff' } = req.body;
+        const {
+            email,
+            fullName,
+            password,
+            phoneNumber,
+            facultyId,
+            departmentId,
+            role = 'staff',
+            positions
+        } = req.body;
 
         // Validation
-        if (!email || !fullName || !password) {
+        if (!email || !fullName || !password || !facultyId) {
             return res.status(400).json({
                 success: false,
-                message: 'Vui lòng nhập đầy đủ thông tin'
+                message: 'Vui lòng nhập đầy đủ thông tin bắt buộc'
             });
         }
 
@@ -176,14 +185,8 @@ const register = async (req, res) => {
             });
         }
 
-        // Chuẩn hóa email
-        const normalizedEmail = email.toLowerCase().trim();
-
         // Check if user exists
-        const existingUser = await User.findOne({
-            email: normalizedEmail
-        });
-
+        const existingUser = await User.findByEmailOrUsername(email);
         if (existingUser) {
             return res.status(400).json({
                 success: false,
@@ -191,12 +194,54 @@ const register = async (req, res) => {
             });
         }
 
+        // Validate faculty
+        const Faculty = require('../models/Faculty');
+        const faculty = await Faculty.findById(facultyId);
+        if (!faculty) {
+            return res.status(400).json({
+                success: false,
+                message: 'Khoa không tồn tại'
+            });
+        }
+
+        // Validate department if provided
+        if (departmentId) {
+            const Department = require('../models/Department');
+            const department = await Department.findById(departmentId);
+            if (!department) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Bộ môn không tồn tại'
+                });
+            }
+        }
+
+        // Prepare positions data
+        const positionsData = positions && positions.length > 0 ?
+            positions.map(pos => ({
+                ...pos,
+                startDate: pos.startDate || new Date(),
+                isActive: pos.isActive !== false
+            })) :
+            [{
+                title: 'giang_vien',
+                department: departmentId,
+                isMain: true,
+                isActive: true,
+                startDate: new Date()
+            }];
+
         // Create new user
         const user = new User({
-            email: normalizedEmail,
+            email: email.toLowerCase().trim(),
             fullName: fullName.trim(),
             password,
-            role
+            phoneNumber: phoneNumber?.trim(),
+            facultyId,
+            departmentId,
+            role,
+            positions: positionsData,
+            status: 'pending' // Requires activation
         });
 
         await user.save();
@@ -204,13 +249,19 @@ const register = async (req, res) => {
         // Generate token
         const token = generateToken(user._id);
 
+        // Populate user data
+        await user.populate([
+            { path: 'facultyId', select: 'name code' },
+            { path: 'departmentId', select: 'name code' },
+            { path: 'positions.department', select: 'name code' }
+        ]);
+
         // Return response
         const userResponse = user.toObject();
-        delete userResponse.password;
 
         res.status(201).json({
             success: true,
-            message: 'Đăng ký thành công',
+            message: 'Đăng ký thành công. Tài khoản đang chờ kích hoạt.',
             data: {
                 token,
                 user: userResponse
@@ -226,51 +277,6 @@ const register = async (req, res) => {
     }
 };
 
-// Thêm route tạm để reset admin password
-const resetAdminPassword = async (req, res) => {
-    try {
-        console.log('🔧 Resetting admin password...');
-
-        const admin = await User.findOne({
-            $or: [
-                { email: 'admin' },
-                { email: 'admin@cmc.edu.vn' }
-            ]
-        });
-
-        if (!admin) {
-            return res.status(404).json({
-                success: false,
-                message: 'Admin user not found'
-            });
-        }
-
-        console.log('Found admin:', admin.email);
-
-        // Reset password
-        admin.password = 'admin123';
-        await admin.save();
-
-        console.log('✅ Admin password reset to: admin123');
-
-        res.json({
-            success: true,
-            message: 'Admin password reset successfully',
-            data: {
-                email: admin.email,
-                newPassword: 'admin123'
-            }
-        });
-
-    } catch (error) {
-        console.error('Reset admin password error:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Error resetting admin password'
-        });
-    }
-};
-
 const forgotPassword = async (req, res) => {
     try {
         const { email } = req.body;
@@ -282,10 +288,7 @@ const forgotPassword = async (req, res) => {
             });
         }
 
-        const user = await User.findOne({
-            email: email.toLowerCase()
-        });
-
+        const user = await User.findByEmailOrUsername(email);
         if (!user) {
             return res.status(404).json({
                 success: false,
@@ -365,6 +368,10 @@ const resetPassword = async (req, res) => {
         user.resetPasswordToken = undefined;
         user.resetPasswordExpires = undefined;
 
+        // Reset login attempts
+        user.loginAttempts = 0;
+        user.lockUntil = undefined;
+
         await user.save();
 
         res.json({
@@ -397,6 +404,13 @@ const changePassword = async (req, res) => {
             return res.status(400).json({
                 success: false,
                 message: 'Mật khẩu mới phải có ít nhất 6 ký tự'
+            });
+        }
+
+        if (currentPassword === newPassword) {
+            return res.status(400).json({
+                success: false,
+                message: 'Mật khẩu mới phải khác mật khẩu hiện tại'
             });
         }
 
@@ -436,10 +450,11 @@ const changePassword = async (req, res) => {
 const getCurrentUser = async (req, res) => {
     try {
         const user = await User.findById(req.user.id)
-            .populate('standardAccess', 'name code')
-            .populate('criteriaAccess', 'name code')
             .populate('facultyId', 'name code')
-            .select('-password -resetPasswordToken -resetPasswordExpires');
+            .populate('departmentId', 'name code')
+            .populate('userGroups', 'name code permissions signingPermissions')
+            .populate('positions.department', 'name code')
+            .select('-password -resetPasswordToken -resetPasswordExpires -loginAttempts -lockUntil');
 
         if (!user) {
             return res.status(404).json({
@@ -448,9 +463,57 @@ const getCurrentUser = async (req, res) => {
             });
         }
 
+        // Calculate effective permissions from groups
+        let effectivePermissions = {};
+
+        if (user.userGroups && user.userGroups.length > 0) {
+            user.userGroups.forEach(group => {
+                if (group.permissions) {
+                    group.permissions.forEach(perm => {
+                        if (!effectivePermissions[perm.module]) {
+                            effectivePermissions[perm.module] = {
+                                view: false,
+                                create: false,
+                                edit: false,
+                                delete: false
+                            };
+                        }
+
+                        // Merge permissions (OR operation)
+                        Object.keys(perm.actions).forEach(action => {
+                            if (perm.actions[action]) {
+                                effectivePermissions[perm.module][action] = true;
+                            }
+                        });
+                    });
+                }
+            });
+        }
+
+        // Override with individual permissions
+        if (user.individualPermissions && user.individualPermissions.length > 0) {
+            user.individualPermissions.forEach(perm => {
+                if (!effectivePermissions[perm.module]) {
+                    effectivePermissions[perm.module] = {
+                        view: false,
+                        create: false,
+                        edit: false,
+                        delete: false
+                    };
+                }
+
+                Object.keys(perm.actions).forEach(action => {
+                    effectivePermissions[perm.module][action] = perm.actions[action];
+                });
+            });
+        }
+
+        const userResponse = user.toObject();
+        userResponse.effectivePermissions = effectivePermissions;
+
         res.json({
             success: true,
-            data: user
+            data: userResponse
         });
 
     } catch (error) {
@@ -465,7 +528,12 @@ const getCurrentUser = async (req, res) => {
 const updateProfile = async (req, res) => {
     try {
         const userId = req.user.id;
-        const { fullName, phoneNumber, department, position } = req.body;
+        const {
+            fullName,
+            phoneNumber,
+            specializations,
+            preferences
+        } = req.body;
 
         const user = await User.findById(userId);
         if (!user) {
@@ -475,19 +543,21 @@ const updateProfile = async (req, res) => {
             });
         }
 
-        // Update fields if provided
+        // Update allowed fields
         if (fullName) user.fullName = fullName.trim();
         if (phoneNumber) user.phoneNumber = phoneNumber.trim();
-        if (department) user.department = department.trim();
-        if (position) user.position = position.trim();
+        if (specializations) user.specializations = specializations;
+        if (preferences) {
+            user.preferences = {
+                ...user.preferences,
+                ...preferences
+            };
+        }
 
         await user.save();
 
         // Return clean user object
         const updatedUser = user.toObject();
-        delete updatedUser.password;
-        delete updatedUser.resetPasswordToken;
-        delete updatedUser.resetPasswordExpires;
 
         res.json({
             success: true,
@@ -504,6 +574,92 @@ const updateProfile = async (req, res) => {
     }
 };
 
+const verifyToken = async (req, res) => {
+    try {
+        const { token } = req.body;
+
+        if (!token) {
+            return res.status(400).json({
+                success: false,
+                message: 'Token không được cung cấp'
+            });
+        }
+
+        try {
+            const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback-secret-key');
+            const user = await User.findById(decoded.userId)
+                .select('-password -resetPasswordToken -resetPasswordExpires -loginAttempts -lockUntil');
+
+            if (!user || user.status !== 'active') {
+                return res.status(401).json({
+                    success: false,
+                    message: 'Token không hợp lệ'
+                });
+            }
+
+            res.json({
+                success: true,
+                message: 'Token hợp lệ',
+                data: { user }
+            });
+
+        } catch (tokenError) {
+            return res.status(401).json({
+                success: false,
+                message: 'Token không hợp lệ hoặc đã hết hạn'
+            });
+        }
+
+    } catch (error) {
+        console.error('Verify token error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Lỗi hệ thống khi xác thực token'
+        });
+    }
+};
+
+// Admin function to reset user password
+const resetAdminPassword = async (req, res) => {
+    try {
+        console.log('🔧 Resetting admin password...');
+
+        const admin = await User.findByEmailOrUsername('admin');
+        if (!admin) {
+            return res.status(404).json({
+                success: false,
+                message: 'Admin user not found'
+            });
+        }
+
+        console.log('Found admin:', admin.email);
+
+        // Reset password
+        admin.password = 'admin123';
+        admin.loginAttempts = 0;
+        admin.lockUntil = undefined;
+        await admin.save();
+
+        console.log('✅ Admin password reset to: admin123');
+
+        res.json({
+            success: true,
+            message: 'Admin password reset successfully',
+            data: {
+                email: admin.email,
+                newPassword: 'admin123'
+            }
+        });
+
+    } catch (error) {
+        console.error('Reset admin password error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error resetting admin password'
+        });
+    }
+};
+
 module.exports = {
     login,
     logout,
@@ -513,5 +669,6 @@ module.exports = {
     changePassword,
     getCurrentUser,
     updateProfile,
+    verifyToken,
     resetAdminPassword
 };
