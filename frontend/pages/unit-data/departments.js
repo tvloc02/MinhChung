@@ -125,104 +125,14 @@ export default function DepartmentsPage() {
                         email: '',
                         position: ''
                     },
-                    description: 'Bộ môn chuyên về khoa học máy tính, trí tuệ nhân tạo',
-                    trainingLevel: ['bachelor', 'master'],
+                    description: '',
+                    trainingLevel: ['', ''],
                     statistics: {
-                        totalPersonnel: 12,
-                        totalStudents: 480
+                        totalPersonnel: 0,
+                        totalStudents: 0
                     },
-                    status: 'active',
-                    createdAt: '2023-01-15T10:00:00Z'
-                },
-                {
-                    id: '2',
-                    name: 'Bộ môn Kỹ thuật Phần mềm',
-                    code: 'KTPM',
-                    type: 'department',
-                    faculty: {
-                        id: '1',
-                        name: 'Khoa Công nghệ Thông tin',
-                        code: 'CNTT'
-                    },
-                    head: {
-                        id: '2',
-                        fullName: 'ThS. Trần Thị B',
-                        email: 'tranthib@cmcu.edu.vn',
-                        position: 'Thạc sĩ'
-                    },
-                    description: 'Bộ môn chuyên về kỹ thuật phần mềm, phát triển ứng dụng',
-                    trainingLevel: ['bachelor', 'master'],
-                    statistics: {
-                        totalPersonnel: 8,
-                        totalStudents: 360
-                    },
-                    status: 'active',
-                    createdAt: '2023-01-20T14:30:00Z'
-                },
-                {
-                    id: '3',
-                    name: 'Ngành Công nghệ thông tin',
-                    code: 'CNTT',
-                    type: 'major',
-                    faculty: {
-                        id: '1',
-                        name: 'Khoa Công nghệ Thông tin',
-                        code: 'CNTT'
-                    },
-                    head: null,
-                    description: 'Ngành đào tạo về công nghệ thông tin',
-                    trainingLevel: ['bachelor', 'master', 'phd'],
-                    statistics: {
-                        totalPersonnel: 25,
-                        totalStudents: 1200
-                    },
-                    status: 'active',
-                    createdAt: '2023-01-10T09:00:00Z'
-                },
-                {
-                    id: '4',
-                    name: 'Bộ môn Cơ khí Chế tạo',
-                    code: 'CKCT',
-                    type: 'department',
-                    faculty: {
-                        id: '2',
-                        name: 'Khoa Cơ khí',
-                        code: 'CK'
-                    },
-                    head: {
-                        id: '3',
-                        fullName: 'PGS.TS. Lê Văn C',
-                        email: 'levanc@cmcu.edu.vn',
-                        position: 'Phó Giáo sư'
-                    },
-                    description: 'Bộ môn chuyên về cơ khí chế tạo máy',
-                    trainingLevel: ['bachelor', 'master'],
-                    statistics: {
-                        totalPersonnel: 15,
-                        totalStudents: 600
-                    },
-                    status: 'active',
-                    createdAt: '2023-01-25T11:15:00Z'
-                },
-                {
-                    id: '5',
-                    name: 'Bộ môn Cơ khí Động lực',
-                    code: 'CKDL',
-                    type: 'department',
-                    faculty: {
-                        id: '2',
-                        name: 'Khoa Cơ khí',
-                        code: 'CK'
-                    },
-                    head: null,
-                    description: 'Bộ môn chuyên về cơ khí động lực',
-                    trainingLevel: ['bachelor'],
-                    statistics: {
-                        totalPersonnel: 10,
-                        totalStudents: 400
-                    },
-                    status: 'active',
-                    createdAt: '2023-02-01T16:45:00Z'
+                    status: '',
+                    createdAt: ''
                 }
             ]
 
@@ -241,9 +151,7 @@ export default function DepartmentsPage() {
         try {
             // Mock API call
             const mockFaculties = [
-                { id: '1', name: 'Khoa Công nghệ Thông tin', code: 'CNTT' },
-                { id: '2', name: 'Khoa Cơ khí', code: 'CK' },
-                { id: '3', name: 'Khoa Kinh tế', code: 'KT' }
+                { id: '', name: '', code: '' }
             ]
             setFacultyOptions(mockFaculties)
         } catch (error) {
@@ -255,11 +163,7 @@ export default function DepartmentsPage() {
         try {
             // Mock API call
             const mockPersonnel = [
-                { id: '1', fullName: 'TS. Nguyễn Văn A', position: 'Tiến sĩ', facultyId: '1' },
-                { id: '2', fullName: 'ThS. Trần Thị B', position: 'Thạc sĩ', facultyId: '1' },
-                { id: '3', fullName: 'PGS.TS. Lê Văn C', position: 'Phó Giáo sư', facultyId: '2' },
-                { id: '4', fullName: 'TS. Phạm Thị D', position: 'Tiến sĩ', facultyId: '3' },
-                { id: '5', fullName: 'ThS. Hoàng Văn E', position: 'Thạc sĩ', facultyId: '2' }
+                { id: '', fullName: '', position: '', facultyId: '' }
             ]
             setPersonnelOptions(mockPersonnel)
         } catch (error) {
