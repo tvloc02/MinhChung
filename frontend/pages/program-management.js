@@ -3,7 +3,7 @@ import { useRouter } from 'next/router'
 import { useAuth } from '../contexts/AuthContext'
 import Layout from '../components/common/Layout'
 import ProgramList from '../components/structure/ProgramList'
-import StandardList from '../components/structure/StandardList'
+import StandardList from '../components/standard/StandardList'
 import CriteriaList from '../components/structure/CriteriaList'
 import {
     BookOpen,

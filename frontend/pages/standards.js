@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 import { useRouter } from 'next/router'
 import { useAuth } from '../contexts/AuthContext'
 import Layout from '../components/common/Layout'
-import StandardList from '../components/structure/StandardList'
+import StandardList from '../components/standard/StandardList'
 import { BarChart3 } from 'lucide-react'
 
 export default function StandardsPage() {
