@@ -415,7 +415,7 @@ export default function EvidenceLookupPage() {
 
     return (
         <Layout
-            title="Tra cứu minh chứng"
+            title=""
             breadcrumbItems={breadcrumbItems}
         >
             <div className="space-y-6">

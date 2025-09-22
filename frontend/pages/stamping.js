@@ -376,7 +376,7 @@ export default function StampingPage() {
 
     return (
         <Layout
-            title="Đóng dấu tài liệu"
+            title=""
             breadcrumbItems={breadcrumbItems}
         >
             <div className="space-y-6">

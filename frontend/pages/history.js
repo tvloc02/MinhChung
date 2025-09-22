@@ -193,7 +193,7 @@ export default function HistoryPage() {
 
     return (
         <Layout
-            title="Lịch sử hoạt động"
+            title=""
             breadcrumbItems={breadcrumbItems}
         >
             <div className="space-y-6">

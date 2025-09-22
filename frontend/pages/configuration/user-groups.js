@@ -75,16 +75,17 @@ export default function UserGroupsPage() {
 
     // Module và action definitions
     const availableModules = [
-        { key: 'so_trinh_ky', name: 'Số trình ký' },
-        { key: 'so_ky_duyet', name: 'Số ký duyệt' },
-        { key: 'tra_cuu_so', name: 'Tra cứu số' },
-        { key: 'so_da_ban_hanh', name: 'Số đã ban hành' },
-        { key: 'kiem_tra', name: 'Kiểm tra' },
-        { key: 'dong_dau', name: 'Đóng dấu' },
-        { key: 'bao_cao', name: 'Báo cáo' },
-        { key: 'danh_muc_so', name: 'Danh mục số' },
-        { key: 'cau_hinh', name: 'Cấu hình' },
-        { key: 'du_lieu_don_vi', name: 'Dữ liệu đơn vị' }
+        { key: 'workflow', name: 'Trình ký minh chứng' },
+        { key: 'evidence-lookup', name: 'Tra cứu minh chứng' },
+        { key: 'publishing', name: 'Ban hành' },
+        { key: 'standard', name: 'Tiêu chuẩn' },
+        { key: 'criteria', name: 'Tiêu chí' },
+        { key: 'stemp', name: 'Đóng dấu' },
+        { key: 'reports', name: 'Báo cáo' },
+        { key: 'evidence-tree', name: 'Danh mục số' },
+        { key: 'configuration', name: 'Cấu hình' },
+        { key: 'unit-data', name: 'Dữ liệu đơn vị' },
+        { key: 'history', name: 'Lịch sử dử dụng' }
     ]
 
     const availableActions = [
@@ -731,7 +732,7 @@ export default function UserGroupsPage() {
 
     return (
         <Layout
-            title="Nhóm người dùng"
+            title=""
             breadcrumbItems={breadcrumbItems}
         >
             <div className="space-y-6">
@@ -743,17 +744,6 @@ export default function UserGroupsPage() {
                                 <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
                                     <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                                 </svg>
-                            </div>
-                            <div className="ml-3">
-                                <h3 className="text-sm font-medium text-yellow-800">
-                                    Không thể kết nối đến Backend Server
-                                </h3>
-                                <div className="mt-2 text-sm text-yellow-700">
-                                    <p>
-                                        Vui lòng khởi động backend server tại port 5001.
-                                        Chạy lệnh: <code className="bg-yellow-100 px-2 py-1 rounded">npm start</code> hoặc <code className="bg-yellow-100 px-2 py-1 rounded">node server.js</code> trong thư mục backend.
-                                    </p>
-                                </div>
                             </div>
                         </div>
                     </div>

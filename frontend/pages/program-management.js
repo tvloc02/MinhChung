@@ -99,7 +99,7 @@ export default function ProgramManagementPage() {
 
     return (
         <Layout
-            title="Cấu trúc chương trình"
+            title=""
             breadcrumbItems={breadcrumbItems}
         >
             <div className="space-y-6">

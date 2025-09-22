@@ -157,7 +157,7 @@ export default function ExpertsPage() {
 
     return (
         <Layout
-            title="Quản lý chuyên gia"
+            title=""
             breadcrumbItems={breadcrumbItems}
         >
             <div className="space-y-6">

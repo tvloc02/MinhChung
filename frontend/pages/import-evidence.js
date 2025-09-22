@@ -33,7 +33,7 @@ export default function ImportEvidencePage() {
 
     return (
         <Layout
-            title="Import minh chứng"
+            title=""
             breadcrumbItems={breadcrumbItems}
         >
             <EvidenceImport />

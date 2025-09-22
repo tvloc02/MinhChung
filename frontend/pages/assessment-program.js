@@ -641,7 +641,7 @@ export default function AssessmentProgramPage() {
 
     return (
         <Layout
-            title="Chương trình đánh giá"
+            title=""
             breadcrumbItems={breadcrumbItems}
         >
             <div className="space-y-6">

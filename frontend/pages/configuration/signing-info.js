@@ -167,7 +167,7 @@ export default function SigningInfoPage() {
 
     return (
         <Layout
-            title="Thông tin ký"
+            title=""
             breadcrumbItems={breadcrumbItems}
         >
             <div className="space-y-6">

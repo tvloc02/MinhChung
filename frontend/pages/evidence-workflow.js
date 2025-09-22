@@ -515,15 +515,15 @@ export default function EvidenceWorkflowPage() {
 
     return (
         <Layout
-            title="Quy trình trình ký minh chứng"
+            title=""
             breadcrumbItems={breadcrumbItems}
         >
             <div className="space-y-6">
                 {/* Header */}
                 <div className="flex justify-between items-center">
                     <div>
-                        <h1 className="text-2xl font-bold text-gray-900">Quy trình trình ký minh chứng</h1>
-                        <p className="text-gray-600 mt-1">Quản lý quy trình trình ký và phê duyệt minh chứng theo đúng workflow</p>
+                        <h1 className="text-2xl font-bold text-gray-900">Trình ký minh chứng</h1>
+                        <p className="text-gray-600 mt-1">Trình ký và phê duyệt minh chứng</p>
                     </div>
                 </div>
 

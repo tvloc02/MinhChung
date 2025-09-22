@@ -428,7 +428,7 @@ export default function FacultiesPage() {
 
     return (
         <Layout
-            title="Quản lý Khoa"
+            title=""
             breadcrumbItems={breadcrumbItems}
         >
             <div className="space-y-6">

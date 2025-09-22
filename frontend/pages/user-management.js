@@ -168,7 +168,7 @@ export default function UserManagementPage() {
 
     return (
         <Layout
-            title="Quản lý người dùng"
+            title=""
             breadcrumbItems={breadcrumbItems}
         >
             <div className="space-y-6">

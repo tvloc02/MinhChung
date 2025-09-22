@@ -769,7 +769,7 @@ export default function PersonnelPage() {
 
     return (
         <Layout
-            title="Quản lý Nhân sự"
+            title=""
             breadcrumbItems={breadcrumbItems}
         >
             <div className="space-y-6">

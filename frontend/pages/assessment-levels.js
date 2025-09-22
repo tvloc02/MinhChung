@@ -492,7 +492,7 @@ export default function AssessmentLevelsPage() {
 
     return (
         <Layout
-            title="Cấp đánh giá"
+            title=""
             breadcrumbItems={breadcrumbItems}
         >
             <div className="space-y-6">
