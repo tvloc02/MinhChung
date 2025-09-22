@@ -61,34 +61,14 @@ export default function HistoryPage() {
 
             const mockHistory = [
                 {
-                    _id: '1',
-                    userId: { fullName: 'Nguyễn Văn A', email: 'nva@cmc.edu.vn' },
-                    action: 'create',
-                    module: 'evidence',
-                    description: 'Tạo minh chứng "Quyết định thành lập trường"',
+                    _id: '',
+                    userId: { fullName: '', email: '' },
+                    action: '',
+                    module: '',
+                    description: '',
                     timestamp: new Date(),
-                    status: 'success',
-                    ipAddress: '192.168.1.100'
-                },
-                {
-                    _id: '2',
-                    userId: { fullName: 'Trần Thị B', email: 'ttb@cmc.edu.vn' },
-                    action: 'update',
-                    module: 'standards',
-                    description: 'Cập nhật tiêu chuẩn "Tổ chức và quản lý"',
-                    timestamp: new Date(Date.now() - 3600000),
-                    status: 'success',
-                    ipAddress: '192.168.1.101'
-                },
-                {
-                    _id: '3',
-                    userId: { fullName: 'Lê Văn C', email: 'lvc@cmc.edu.vn' },
-                    action: 'delete',
-                    module: 'evidence',
-                    description: 'Xóa minh chứng "Báo cáo tự đánh giá"',
-                    timestamp: new Date(Date.now() - 7200000),
-                    status: 'failed',
-                    ipAddress: '192.168.1.102'
+                    status: '',
+                    ipAddress: ''
                 }
             ]
 

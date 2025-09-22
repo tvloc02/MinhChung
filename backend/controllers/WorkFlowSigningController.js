@@ -3,12 +3,7 @@ const File = require('../models/File');
 const SigningInfo = require('../models/SigningInfo');
 const User = require('../models/User');
 
-/**
- * Controller quản lý quy trình trình ký minh chứng theo workflow thực tế
- * Workflow: Draft -> Pending Approval -> In Progress -> Completed/Rejected
- */
 
-// Lấy danh sách minh chứng theo trạng thái workflow
 const getEvidencesByWorkflowStatus = async (req, res) => {
     try {
         const {

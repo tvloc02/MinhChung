@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { User, Camera, Upload, Save, Edit3, Eye, EyeOff, Phone, Mail, MapPin, Briefcase, Shield, Award } from 'lucide-react';
-import { useAuth } from '../../contexts/AuthContext';
-import { profileService } from '../../services/profileService';
+import { useAuth } from '../contexts/AuthContext';
 
 const UserProfile = () => {
     const { user: authUser, updateUser } = useAuth();
@@ -36,7 +35,7 @@ const UserProfile = () => {
                     showDate: true,
                     showReason: true,
                     showLocation: true,
-                    defaultLocation: 'Đại học Công nghiệp TP.HCM'
+                    defaultLocation: ''
                 }
             });
         }
