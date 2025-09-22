@@ -75,15 +75,12 @@ export default function DepartmentsPage() {
     const [personnelOptions, setPersonnelOptions] = useState([])
 
     const departmentTypes = [
-        { value: 'department', label: 'Bộ môn' },
-        { value: 'major', label: 'Ngành học' }
+        { value: '', label: '' },
+        { value: '', label: '' }
     ]
 
     const trainingLevels = [
-        { value: 'bachelor', label: 'Cử nhân' },
-        { value: 'master', label: 'Thạc sĩ' },
-        { value: 'phd', label: 'Tiến sĩ' },
-        { value: 'diploma', label: 'Cao đẳng' }
+        { value: '', label: '' }
     ]
 
     useEffect(() => {
@@ -101,8 +98,8 @@ export default function DepartmentsPage() {
     }, [user, currentPage, searchQuery, filters])
 
     const breadcrumbItems = [
-        { name: 'Dữ liệu đơn vị', href: '/unit-data' },
-        { name: 'Bộ môn/Ngành', icon: GitBranch }
+        { name: '', href: '/unit-data' },
+        { name: '', icon: GitBranch }
     ]
 
     const fetchDepartments = async () => {
@@ -113,20 +110,20 @@ export default function DepartmentsPage() {
 
             const mockDepartments = [
                 {
-                    id: '1',
-                    name: 'Bộ môn Khoa học Máy tính',
-                    code: 'KHMT',
-                    type: 'department',
+                    id: '',
+                    name: '',
+                    code: '',
+                    type: '',
                     faculty: {
-                        id: '1',
-                        name: 'Khoa Công nghệ Thông tin',
-                        code: 'CNTT'
+                        id: '',
+                        name: '',
+                        code: ''
                     },
                     head: {
-                        id: '1',
-                        fullName: 'TS. Nguyễn Văn A',
-                        email: 'nguyenvana@cmcu.edu.vn',
-                        position: 'Tiến sĩ'
+                        id: '',
+                        fullName: '',
+                        email: '',
+                        position: ''
                     },
                     description: 'Bộ môn chuyên về khoa học máy tính, trí tuệ nhân tạo',
                     trainingLevel: ['bachelor', 'master'],

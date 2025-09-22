@@ -103,95 +103,39 @@ export default function FacultiesPage() {
 
             const mockFaculties = [
                 {
-                    id: '1',
-                    name: 'Khoa Công nghệ Thông tin',
-                    code: 'CNTT',
-                    description: 'Khoa đào tạo về công nghệ thông tin, khoa học máy tính',
+                    id: '',
+                    name: '',
+                    code: '',
+                    description: '',
                     dean: {
-                        id: '1',
-                        fullName: 'TS. Nguyễn Văn A',
-                        email: 'nguyenvana@cmcu.edu.vn',
-                        position: 'Tiến sĩ'
+                        id: '',
+                        fullName: '',
+                        email: '',
+                        position: ''
                     },
                     viceDeans: [
                         {
-                            id: '2',
-                            fullName: 'ThS. Trần Thị B',
-                            email: 'tranthib@cmcu.edu.vn',
-                            position: 'Thạc sĩ'
+                            id: '',
+                            fullName: '',
+                            email: '',
+                            position: ''
                         }
                     ],
-                    establishedDate: '2010-09-15T00:00:00Z',
+                    establishedDate: '',
                     contactInfo: {
-                        phone: '024-12345678',
-                        email: 'cntt@cmcu.edu.vn',
-                        address: 'Tầng 3, Nhà A1, Trường Đại học Công nghiệp Hà Nội',
-                        website: 'https://cntt.cmcu.edu.vn'
-                    },
-                    statistics: {
-                        totalPersonnel: 25,
-                        totalDepartments: 3,
-                        totalStudents: 1200
-                    },
-                    status: 'active',
-                    createdAt: '2023-01-15T10:00:00Z'
-                },
-                {
-                    id: '2',
-                    name: 'Khoa Cơ khí',
-                    code: 'CK',
-                    description: 'Khoa đào tạo kỹ thuật cơ khí, chế tạo máy',
-                    dean: {
-                        id: '3',
-                        fullName: 'PGS.TS. Lê Văn C',
-                        email: 'levanc@cmcu.edu.vn',
-                        position: 'Phó Giáo sư'
-                    },
-                    viceDeans: [],
-                    establishedDate: '2008-03-20T00:00:00Z',
-                    contactInfo: {
-                        phone: '024-87654321',
-                        email: 'cokhi@cmcu.edu.vn',
-                        address: 'Tầng 2, Nhà B2, Trường Đại học Công nghiệp Hà Nội',
-                        website: 'https://cokhi.cmcu.edu.vn'
-                    },
-                    statistics: {
-                        totalPersonnel: 32,
-                        totalDepartments: 4,
-                        totalStudents: 1500
-                    },
-                    status: 'active',
-                    createdAt: '2023-01-10T14:30:00Z'
-                },
-                {
-                    id: '3',
-                    name: 'Khoa Kinh tế',
-                    code: 'KT',
-                    description: 'Khoa đào tạo về kinh tế, quản trị kinh doanh',
-                    dean: null,
-                    viceDeans: [
-                        {
-                            id: '4',
-                            fullName: 'TS. Phạm Thị D',
-                            email: 'phamthid@cmcu.edu.vn',
-                            position: 'Tiến sĩ'
-                        }
-                    ],
-                    establishedDate: '2012-01-10T00:00:00Z',
-                    contactInfo: {
-                        phone: '024-11223344',
-                        email: 'kinhte@cmcu.edu.vn',
-                        address: 'Tầng 1, Nhà C1, Trường Đại học Công nghiệp Hà Nội',
+                        phone: '',
+                        email: '',
+                        address: '',
                         website: ''
                     },
                     statistics: {
-                        totalPersonnel: 18,
-                        totalDepartments: 2,
-                        totalStudents: 800
+                        totalPersonnel: 0,
+                        totalDepartments: 0,
+                        totalStudents: 0
                     },
-                    status: 'active',
-                    createdAt: '2023-02-01T09:15:00Z'
-                }
+                    status: '',
+                    createdAt: ''
+                },
             ]
 
             setFaculties(mockFaculties)
@@ -207,13 +151,8 @@ export default function FacultiesPage() {
 
     const fetchPersonnelOptions = async () => {
         try {
-            // Mock API call
             const mockPersonnel = [
-                { id: '1', fullName: 'TS. Nguyễn Văn A', position: 'Tiến sĩ' },
-                { id: '2', fullName: 'ThS. Trần Thị B', position: 'Thạc sĩ' },
-                { id: '3', fullName: 'PGS.TS. Lê Văn C', position: 'Phó Giáo sư' },
-                { id: '4', fullName: 'TS. Phạm Thị D', position: 'Tiến sĩ' },
-                { id: '5', fullName: 'ThS. Hoàng Văn E', position: 'Thạc sĩ' }
+                { id: '', fullName: '', position: '' }
             ]
             setPersonnelOptions(mockPersonnel)
         } catch (error) {
