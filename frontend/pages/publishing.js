@@ -102,7 +102,7 @@ export default function PublishingPage() {
     }, [user, searchQuery, selectedStatus, selectedType, currentPage])
 
     const breadcrumbItems = [
-        { name: 'Xuất bản minh chứng', icon: Globe }
+        { name: 'Ban hành minh chứng', icon: Globe }
     ]
 
     const fetchPublications = async () => {
@@ -113,53 +113,24 @@ export default function PublishingPage() {
 
             const mockPublications = [
                 {
-                    id: '1',
-                    title: 'Bộ sưu tập minh chứng AUN-QA 2024',
-                    description: 'Tập hợp đầy đủ các minh chứng cho chương trình đánh giá AUN-QA năm 2024',
-                    type: 'evidence_collection',
-                    status: 'published',
-                    visibility: 'public',
-                    url: 'https://evidence.vnua.edu.vn/collections/aun-qa-2024',
-                    shortUrl: 'vnua.edu.vn/aun2024',
-                    evidenceCount: 156,
-                    viewCount: 2340,
-                    downloadCount: 89,
-                    shareCount: 23,
-                    allowDownload: true,
-                    allowShare: true,
-                    publishedAt: '2024-12-20T10:00:00Z',
-                    expiryDate: '2025-12-31T23:59:59Z',
-                    createdBy: 'Nguyễn Văn A',
-                    createdAt: '2024-12-15T09:00:00Z',
-                    seoSettings: {
-                        metaTitle: 'Minh chứng AUN-QA 2024 - VNUA',
-                        metaDescription: 'Bộ sưu tập minh chứng đánh giá chất lượng theo tiêu chuẩn AUN-QA',
-                        keywords: ['AUN-QA', 'minh chứng', 'chất lượng giáo dục']
-                    }
-                },
-                {
-                    id: '2',
-                    title: 'Báo cáo tự đánh giá chương trình',
-                    description: 'Báo cáo tự đánh giá chương trình đào tạo theo chuẩn MOET',
-                    type: 'single_document',
-                    status: 'draft',
-                    visibility: 'private',
+                    id: '',
+                    title: '',
+                    description: '',
+                    type: '',
+                    status: '',
+                    visibility: '',
                     url: '',
                     shortUrl: '',
-                    evidenceCount: 1,
-                    viewCount: 0,
-                    downloadCount: 0,
-                    shareCount: 0,
-                    allowDownload: false,
-                    allowShare: false,
-                    publishedAt: null,
+                    allowDownload: true,
+                    allowShare: true,
+                    publishedAt: '',
                     expiryDate: '',
-                    createdBy: 'Trần Thị B',
-                    createdAt: '2024-12-22T14:30:00Z',
+                    createdBy: '',
+                    createdAt: '',
                     seoSettings: {
                         metaTitle: '',
                         metaDescription: '',
-                        keywords: []
+                        keywords: ['', '', '']
                     }
                 }
             ]
@@ -194,18 +165,11 @@ export default function PublishingPage() {
             // Mock API call
             const mockEvidences = [
                 {
-                    id: '1',
-                    code: 'H1.01.02.15',
-                    name: 'Báo cáo kết quả học tập sinh viên K65',
-                    standardName: 'Chất lượng sinh viên đầu vào',
-                    fileCount: 3
-                },
-                {
-                    id: '2',
-                    code: 'H1.01.02.16',
-                    name: 'Danh sách sinh viên tốt nghiệp loại xuất sắc',
-                    standardName: 'Chất lượng sinh viên đầu vào',
-                    fileCount: 1
+                    id: '',
+                    code: '',
+                    name: '',
+                    standardName: '',
+                    fileCount: 0
                 }
             ]
 
@@ -712,15 +676,15 @@ export default function PublishingPage() {
 
     return (
         <Layout
-            title="Xuất bản minh chứng"
+            title=""
             breadcrumbItems={breadcrumbItems}
         >
             <div className="space-y-6">
                 {/* Header */}
                 <div className="flex justify-between items-center">
                     <div>
-                        <h1 className="text-2xl font-bold text-gray-900">Xuất bản minh chứng</h1>
-                        <p className="text-gray-600 mt-1">Xuất bản và chia sẻ minh chứng với cộng đồng</p>
+                        <h1 className="text-2xl font-bold text-gray-900">Ban hành minh chứng</h1>
+                        <p className="text-gray-600 mt-1">Ban hành minh chứng khi đã xác nhận</p>
                     </div>
                     <button
                         onClick={() => {
