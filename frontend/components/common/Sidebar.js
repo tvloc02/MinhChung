@@ -22,7 +22,9 @@ import {
     ChevronDown,
     ChevronRight,
     Menu,
-    X
+    X,
+    Network
+
 } from 'lucide-react'
 
 export default function Sidebar({ open, onClose }) {
@@ -94,6 +96,12 @@ export default function Sidebar({ open, onClose }) {
             icon: TrendingUp,
             path: '/reports',
             active: router.pathname.includes('/reports')
+        },
+        {
+            name: 'Cây minh chứng',
+            icon: Network,
+            path: '/evidence-tree',
+            active: router.pathname.includes('/evidence-tree')
         },
         {
             name: 'Cấu hình',

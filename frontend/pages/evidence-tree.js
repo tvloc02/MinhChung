@@ -16,7 +16,7 @@ export default function EvidenceTreePage() {
     }, [user, isLoading, router])
 
     const breadcrumbItems = [
-        { name: 'Cây minh chứng', icon: FolderTree }
+        { name: '', icon: FolderTree }
     ]
 
     if (isLoading) {

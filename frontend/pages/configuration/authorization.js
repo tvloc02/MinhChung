@@ -17,7 +17,10 @@ import {
     Lock,
     Unlock,
     Eye,
-    EyeOff
+    EyeOff,
+    Copy,
+    Download,
+    Upload
 } from 'lucide-react'
 import { formatDate } from '../../utils/helpers'
 import toast from 'react-hot-toast'
@@ -25,15 +28,34 @@ import toast from 'react-hot-toast'
 export default function AuthorizationPage() {
     const { user, isLoading } = useAuth()
     const router = useRouter()
-    const [users, setUsers] = useState([])
-    const [selectedUsers, setSelectedUsers] = useState([])
-    const [loading, setLoading] = useState(true)
-    const [searchTerm, setSearchTerm] = useState('')
-    const [selectedRole, setSelectedRole] = useState('')
-    const [activeTab, setActiveTab] = useState('users')
-    const [permissions, setPermissions] = useState({})
-    const [showPermissionModal, setShowPermissionModal] = useState(false)
-    const [selectedUser, setSelectedUser] = useState(null)
+
+    const [loading, setLoading] = useState(false)
+    const [activeTab, setActiveTab] = useState('matrix')
+
+    // Permission Matrix State
+    const [permissionMatrix, setPermissionMatrix] = useState({})
+    const [userGroups, setUserGroups] = useState([])
+    const [modules, setModules] = useState([])
+    const [actions, setActions] = useState([])
+
+    // Filters
+    const [filters, setFilters] = useState({
+        organizationLevel: '',
+        facultyId: '',
+        departmentId: '',
+        module: ''
+    })
+
+    // Edit state
+    const [editingCell, setEditingCell] = useState(null)
+    const [selectedGroups, setSelectedGroups] = useState([])
+    const [showTemplateModal, setShowTemplateModal] = useState(false)
+    const [showCopyModal, setShowCopyModal] = useState(false)
+
+    const breadcrumbItems = [
+        { name: 'Cấu hình', icon: Settings },
+        { name: 'Phân quyền', icon: Shield }
+    ]
 
     useEffect(() => {
         if (!isLoading && !user) {
@@ -43,213 +65,174 @@ export default function AuthorizationPage() {
 
     useEffect(() => {
         if (user && user.role === 'admin') {
-            fetchUsers()
             fetchPermissions()
+            fetchPermissionMatrix()
         }
-    }, [user, searchTerm, selectedRole])
+    }, [user, filters])
 
-    const breadcrumbItems = [
-        { name: 'Cấu hình', icon: Settings },
-        { name: 'Phân quyền', icon: Shield }
-    ]
+    const fetchPermissions = async () => {
+        try {
+            const response = await fetch('/api/authorization/permissions')
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`)
+            }
+            const data = await response.json()
+            if (data.success) {
+                const { modules, actions } = data.data
+                setModules(modules)
+                setActions(actions)
+            }
+        } catch (error) {
+            console.error('Lỗi tải danh sách quyền:', error)
+            // Set default data when API is not available
+            setModules([
+                { key: 'workflow', name: 'Trình ký minh chứng' },
+                { key: 'evidence-lookup', name: 'Tra cứu minh chứng' },
+                { key: 'publishing', name: 'Ban hành' },
+                { key: 'standard', name: 'Tiêu chuẩn' },
+                { key: 'criteria', name: 'Tiêu chí' },
+                { key: 'stemp', name: 'Đóng dấu' },
+                { key: 'reports', name: 'Báo cáo' },
+                { key: 'evidence-tree', name: 'Danh mục số' },
+                { key: 'configuration', name: 'Cấu hình' },
+                { key: 'unit-data', name: 'Dữ liệu đơn vị' },
+                { key: 'history', name: 'Lịch sử dử dụng' }
+            ])
+            setActions([
+                { key: 'view', name: 'Hiển thị' },
+                { key: 'create', name: 'Thêm' },
+                { key: 'edit', name: 'Sửa' },
+                { key: 'delete', name: 'Xóa' }
+            ])
+        }
+    }
 
-    const fetchUsers = async () => {
+    const fetchPermissionMatrix = async () => {
         try {
             setLoading(true)
-            // Mock API call
-            await new Promise(resolve => setTimeout(resolve, 1000))
+            const params = new URLSearchParams(filters).toString()
+            const response = await fetch(`/api/authorization/permission-matrix?${params}`)
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`)
+            }
+            const data = await response.json()
 
-            const mockUsers = [
-                {
-                    _id: '1',
-                    fullName: 'Nguyễn Văn A',
-                    email: 'nva@cmc.edu.vn',
-                    role: 'admin',
-                    status: 'active',
-                    standardAccess: ['std1', 'std2'],
-                    criteriaAccess: ['crt1', 'crt2'],
-                    lastLogin: new Date(),
-                    createdAt: new Date()
-                },
-                {
-                    _id: '2',
-                    fullName: 'Trần Thị B',
-                    email: 'ttb@cmc.edu.vn',
-                    role: 'manager',
-                    status: 'active',
-                    standardAccess: ['std1'],
-                    criteriaAccess: ['crt1'],
-                    lastLogin: new Date(Date.now() - 86400000),
-                    createdAt: new Date()
-                },
-                {
-                    _id: '3',
-                    fullName: 'Lê Văn C',
-                    email: 'lvc@cmc.edu.vn',
-                    role: 'staff',
-                    status: 'active',
-                    standardAccess: [],
-                    criteriaAccess: ['crt1'],
-                    lastLogin: new Date(Date.now() - 172800000),
-                    createdAt: new Date()
-                }
-            ]
-
-            setUsers(mockUsers)
+            if (data.success) {
+                setPermissionMatrix(data.data.matrix)
+                setUserGroups(data.data.groups)
+            }
         } catch (error) {
-            toast.error('Lỗi tải danh sách người dùng')
+            console.error('Lỗi tải ma trận phân quyền:', error)
+            // Set default data when API is not available
+            setUserGroups([
+                { code: 'ADMIN', name: 'Quản trị viên hệ thống', organizationLevel: 'university' },
+                { code: 'MANAGER', name: 'Quản lý khoa', organizationLevel: 'faculty' },
+                { code: 'STAFF', name: 'Nhân viên', organizationLevel: 'department' }
+            ])
+            setPermissionMatrix({})
+            toast.error('Không thể kết nối đến server. Vui lòng kiểm tra backend server.')
         } finally {
             setLoading(false)
         }
     }
 
-    const fetchPermissions = async () => {
+    const updateGroupPermissions = async (groupId, permissions) => {
         try {
-            const mockPermissions = {
-                modules: ['evidence', 'standards', 'criteria', 'experts', 'reports', 'users', 'configuration'],
-                actions: ['create', 'read', 'update', 'delete', 'approve', 'sign', 'publish'],
-                roles: ['admin', 'manager', 'staff', 'expert']
+            const response = await fetch(`/api/authorization/groups/${groupId}/permissions`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ permissions })
+            })
+            const data = await response.json()
+
+            if (data.success) {
+                toast.success('Cập nhật quyền thành công')
+                fetchPermissionMatrix()
             }
-            setPermissions(mockPermissions)
         } catch (error) {
-            console.error('Error fetching permissions:', error)
+            console.error('Lỗi cập nhật quyền:', error)
+            toast.error('Lỗi cập nhật quyền')
         }
     }
 
-    const getRoleBadge = (role) => {
-        const styles = {
-            admin: 'bg-red-100 text-red-800',
-            manager: 'bg-blue-100 text-blue-800',
-            staff: 'bg-green-100 text-green-800',
-            expert: 'bg-purple-100 text-purple-800'
+    const copyGroupPermissions = async (sourceGroupId, targetGroupIds) => {
+        try {
+            const response = await fetch('/api/authorization/copy-permissions', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    sourceGroupId,
+                    targetGroupIds
+                })
+            })
+            const data = await response.json()
+
+            if (data.success) {
+                toast.success('Sao chép quyền thành công')
+                fetchPermissionMatrix()
+                setShowCopyModal(false)
+            }
+        } catch (error) {
+            console.error('Lỗi sao chép quyền:', error)
+            toast.error('Lỗi sao chép quyền')
         }
-        const labels = {
-            admin: 'Quản trị viên',
-            manager: 'Quản lý',
-            staff: 'Nhân viên',
-            expert: 'Chuyên gia'
-        }
-        return (
-            <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${styles[role]}`}>
-                {labels[role]}
-            </span>
-        )
     }
 
-    const getStatusIcon = (status) => {
-        return status === 'active'
-            ? <CheckCircle className="h-4 w-4 text-green-500" />
-            : <XCircle className="h-4 w-4 text-red-500" />
-    }
+    const applyTemplate = async (groupId, templateName) => {
+        try {
+            const response = await fetch(`/api/authorization/groups/${groupId}/apply-template`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ templateName })
+            })
+            const data = await response.json()
 
-    const handleBulkAction = (action) => {
-        if (selectedUsers.length === 0) {
-            toast.error('Vui lòng chọn ít nhất một người dùng')
-            return
+            if (data.success) {
+                toast.success('Áp dụng template thành công')
+                fetchPermissionMatrix()
+                setShowTemplateModal(false)
+            }
+        } catch (error) {
+            console.error('Lỗi áp dụng template:', error)
+            toast.error('Lỗi áp dụng template')
         }
+    }
 
-        switch (action) {
-            case 'activate':
-                toast.success(`Đã kích hoạt ${selectedUsers.length} người dùng`)
-                break
-            case 'deactivate':
-                toast.success(`Đã vô hiệu hóa ${selectedUsers.length} người dùng`)
-                break
-            case 'delete':
-                toast.success(`Đã xóa ${selectedUsers.length} người dùng`)
-                break
-            default:
-                break
+    const togglePermission = (groupCode, module, action) => {
+        const currentMatrix = { ...permissionMatrix }
+        if (!currentMatrix[module]) {
+            currentMatrix[module] = {}
         }
-        setSelectedUsers([])
-    }
-
-    const handleEditPermissions = (user) => {
-        setSelectedUser(user)
-        setShowPermissionModal(true)
-    }
-
-    const PermissionMatrix = () => {
-        const matrix = {
-            admin: {
-                evidence: ['create', 'read', 'update', 'delete', 'approve', 'sign', 'publish'],
-                standards: ['create', 'read', 'update', 'delete'],
-                criteria: ['create', 'read', 'update', 'delete'],
-                experts: ['create', 'read', 'update', 'delete'],
-                reports: ['create', 'read', 'update', 'delete'],
-                users: ['create', 'read', 'update', 'delete'],
-                configuration: ['create', 'read', 'update', 'delete']
-            },
-            manager: {
-                evidence: ['create', 'read', 'update', 'approve'],
-                standards: ['read'],
-                criteria: ['read'],
-                experts: ['read'],
-                reports: ['create', 'read'],
-                users: ['read'],
-                configuration: ['read']
-            },
-            staff: {
-                evidence: ['create', 'read', 'update'],
-                standards: ['read'],
-                criteria: ['read'],
-                experts: ['read'],
-                reports: ['read'],
-                users: [],
-                configuration: []
-            },
-            expert: {
-                evidence: ['read', 'approve'],
-                standards: ['read'],
-                criteria: ['read'],
-                experts: ['read'],
-                reports: ['read'],
-                users: [],
-                configuration: []
+        if (!currentMatrix[module][groupCode]) {
+            currentMatrix[module][groupCode] = {
+                actions: { view: false, create: false, edit: false, delete: false }
             }
         }
 
-        return (
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                <h3 className="text-lg font-medium text-gray-900 mb-4">Ma trận phân quyền</h3>
-                <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-gray-50">
-                        <tr>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                                Vai trò / Module
-                            </th>
-                            {permissions.modules?.map(module => (
-                                <th key={module} className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">
-                                    {module}
-                                </th>
-                            ))}
-                        </tr>
-                        </thead>
-                        <tbody className="bg-white divide-y divide-gray-200">
-                        {Object.keys(matrix).map(role => (
-                            <tr key={role}>
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                    {getRoleBadge(role)}
-                                </td>
-                                {permissions.modules?.map(module => (
-                                    <td key={module} className="px-6 py-4 text-center">
-                                        <div className="flex flex-wrap justify-center gap-1">
-                                            {matrix[role][module]?.map(action => (
-                                                <span key={action} className="inline-flex items-center px-1 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
-                                                        {action}
-                                                    </span>
-                                            ))}
-                                        </div>
-                                    </td>
-                                ))}
-                            </tr>
-                        ))}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        )
+        currentMatrix[module][groupCode].actions[action] =
+            !currentMatrix[module][groupCode].actions[action]
+
+        setPermissionMatrix(currentMatrix)
+
+        // Find group and update permissions
+        const group = userGroups.find(g => g.code === groupCode)
+        if (group) {
+            const updatedPermissions = modules.map(mod => {
+                const moduleMatrix = currentMatrix[mod.key]?.[groupCode]
+                return {
+                    module: mod.key,
+                    actions: moduleMatrix?.actions || { view: false, create: false, edit: false, delete: false }
+                }
+            }).filter(p => Object.values(p.actions).some(v => v))
+
+            updateGroupPermissions(group._id, updatedPermissions)
+        }
     }
 
     if (isLoading) {
@@ -278,229 +261,208 @@ export default function AuthorizationPage() {
             breadcrumbItems={breadcrumbItems}
         >
             <div className="space-y-6">
-                {/* Header */}
-                <div>
-                    <h1 className="text-2xl font-bold text-gray-900">Quản lý phân quyền</h1>
-                    <p className="text-gray-600">Quản lý quyền truy cập người dùng và ma trận phân quyền</p>
-                </div>
-
-                {/* Tabs */}
-                <div className="border-b border-gray-200">
-                    <nav className="-mb-px flex space-x-8">
-                        <button
-                            onClick={() => setActiveTab('users')}
-                            className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                                activeTab === 'users'
-                                    ? 'border-blue-500 text-blue-600'
-                                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                            }`}
-                        >
-                            <Users className="h-4 w-4 inline mr-2" />
-                            Người dùng
-                        </button>
-                        <button
-                            onClick={() => setActiveTab('matrix')}
-                            className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                                activeTab === 'matrix'
-                                    ? 'border-blue-500 text-blue-600'
-                                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                            }`}
-                        >
-                            <Shield className="h-4 w-4 inline mr-2" />
-                            Ma trận phân quyền
-                        </button>
-                    </nav>
-                </div>
-
-                {activeTab === 'users' ? (
-                    <>
-                        {/* Filters & Actions */}
-                        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
-                                <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-4">
-                                    <div className="relative">
-                                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                                        <input
-                                            type="text"
-                                            placeholder="Tìm kiếm người dùng..."
-                                            value={searchTerm}
-                                            onChange={(e) => setSearchTerm(e.target.value)}
-                                            className="pl-10 w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                        />
-                                    </div>
-
-                                    <select
-                                        value={selectedRole}
-                                        onChange={(e) => setSelectedRole(e.target.value)}
-                                        className="border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    >
-                                        <option value="">Tất cả vai trò</option>
-                                        <option value="admin">Quản trị viên</option>
-                                        <option value="manager">Quản lý</option>
-                                        <option value="staff">Nhân viên</option>
-                                        <option value="expert">Chuyên gia</option>
-                                    </select>
-
-                                    <button
-                                        onClick={fetchUsers}
-                                        className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
-                                    >
-                                        <Filter className="h-4 w-4 mr-2" />
-                                        Lọc
-                                    </button>
+                {/* Backend Connection Notice */}
+                {userGroups.length === 0 && !loading && (
+                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                        <div className="flex">
+                            <div className="flex-shrink-0">
+                                <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                                </svg>
+                            </div>
+                            <div className="ml-3">
+                                <h3 className="text-sm font-medium text-yellow-800">
+                                    Không thể kết nối đến Backend Server
+                                </h3>
+                                <div className="mt-2 text-sm text-yellow-700">
+                                    <p>
+                                        Vui lòng khởi động backend server tại port 5001.
+                                        Chạy lệnh: <code className="bg-yellow-100 px-2 py-1 rounded">npm start</code> hoặc <code className="bg-yellow-100 px-2 py-1 rounded">node server.js</code> trong thư mục backend.
+                                    </p>
                                 </div>
-
-                                {selectedUsers.length > 0 && (
-                                    <div className="flex items-center space-x-2">
-                                        <span className="text-sm text-gray-500">
-                                            Đã chọn {selectedUsers.length} người dùng
-                                        </span>
-                                        <button
-                                            onClick={() => handleBulkAction('activate')}
-                                            className="inline-flex items-center px-3 py-1 border border-green-300 rounded text-sm text-green-700 bg-green-50 hover:bg-green-100"
-                                        >
-                                            <Unlock className="h-3 w-3 mr-1" />
-                                            Kích hoạt
-                                        </button>
-                                        <button
-                                            onClick={() => handleBulkAction('deactivate')}
-                                            className="inline-flex items-center px-3 py-1 border border-yellow-300 rounded text-sm text-yellow-700 bg-yellow-50 hover:bg-yellow-100"
-                                        >
-                                            <Lock className="h-3 w-3 mr-1" />
-                                            Vô hiệu hóa
-                                        </button>
-                                        <button
-                                            onClick={() => handleBulkAction('delete')}
-                                            className="inline-flex items-center px-3 py-1 border border-red-300 rounded text-sm text-red-700 bg-red-50 hover:bg-red-100"
-                                        >
-                                            <Trash2 className="h-3 w-3 mr-1" />
-                                            Xóa
-                                        </button>
-                                    </div>
-                                )}
                             </div>
                         </div>
-
-                        {/* Users Table */}
-                        <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-                            {loading ? (
-                                <div className="flex justify-center items-center py-12">
-                                    <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-                                </div>
-                            ) : (
-                                <div className="overflow-x-auto">
-                                    <table className="min-w-full divide-y divide-gray-200">
-                                        <thead className="bg-gray-50">
-                                        <tr>
-                                            <th className="px-6 py-3 text-left">
-                                                <input
-                                                    type="checkbox"
-                                                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                                                    onChange={(e) => {
-                                                        if (e.target.checked) {
-                                                            setSelectedUsers(users.map(u => u._id))
-                                                        } else {
-                                                            setSelectedUsers([])
-                                                        }
-                                                    }}
-                                                />
-                                            </th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                Người dùng
-                                            </th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                Vai trò
-                                            </th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                Quyền truy cập
-                                            </th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                Trạng thái
-                                            </th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                Lần đăng nhập cuối
-                                            </th>
-                                            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                Thao tác
-                                            </th>
-                                        </tr>
-                                        </thead>
-                                        <tbody className="bg-white divide-y divide-gray-200">
-                                        {users.map((userData) => (
-                                            <tr key={userData._id} className="hover:bg-gray-50">
-                                                <td className="px-6 py-4 whitespace-nowrap">
-                                                    <input
-                                                        type="checkbox"
-                                                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                                                        checked={selectedUsers.includes(userData._id)}
-                                                        onChange={(e) => {
-                                                            if (e.target.checked) {
-                                                                setSelectedUsers([...selectedUsers, userData._id])
-                                                            } else {
-                                                                setSelectedUsers(selectedUsers.filter(id => id !== userData._id))
-                                                            }
-                                                        }}
-                                                    />
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap">
-                                                    <div className="flex items-center">
-                                                        <div className="flex-shrink-0 h-8 w-8">
-                                                            <div className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center">
-                                                                <User className="h-4 w-4 text-gray-600" />
-                                                            </div>
-                                                        </div>
-                                                        <div className="ml-3">
-                                                            <div className="text-sm font-medium text-gray-900">
-                                                                {userData.fullName}
-                                                            </div>
-                                                            <div className="text-sm text-gray-500">
-                                                                {userData.email}
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap">
-                                                    {getRoleBadge(userData.role)}
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap">
-                                                    <div className="text-sm text-gray-900">
-                                                        <div>Tiêu chuẩn: {userData.standardAccess.length}</div>
-                                                        <div>Tiêu chí: {userData.criteriaAccess.length}</div>
-                                                    </div>
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap">
-                                                    <div className="flex items-center">
-                                                        {getStatusIcon(userData.status)}
-                                                        <span className="ml-2 text-sm text-gray-900">
-                                                                {userData.status === 'active' ? 'Hoạt động' : 'Vô hiệu hóa'}
-                                                            </span>
-                                                    </div>
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                    {formatDate(userData.lastLogin, 'DD/MM/YYYY HH:mm')}
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                                    <button
-                                                        onClick={() => handleEditPermissions(userData)}
-                                                        className="text-blue-600 hover:text-blue-900 mr-3"
-                                                    >
-                                                        <Edit className="h-4 w-4" />
-                                                    </button>
-                                                    <button className="text-gray-400 hover:text-gray-600">
-                                                        <Eye className="h-4 w-4" />
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            )}
-                        </div>
-                    </>
-                ) : (
-                    <PermissionMatrix />
+                    </div>
                 )}
+
+                {/* Header */}
+                <div className="flex justify-between items-center">
+                    <div>
+                        <h1 className="text-2xl font-bold text-gray-900">Phân quyền nhóm người dùng</h1>
+                        <p className="text-gray-600">Quản lý quyền truy cập cho từng nhóm người dùng trong hệ thống</p>
+                    </div>
+
+                    <div className="flex space-x-3">
+                        <button
+                            onClick={() => setShowTemplateModal(true)}
+                            className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                        >
+                            <Download className="h-4 w-4 mr-2" />
+                            Áp dụng Template
+                        </button>
+                        <button
+                            onClick={() => setShowCopyModal(true)}
+                            className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                        >
+                            <Copy className="h-4 w-4 mr-2" />
+                            Sao chép quyền
+                        </button>
+                        <button
+                            onClick={fetchPermissionMatrix}
+                            className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
+                        >
+                            <Shield className="h-4 w-4 mr-2" />
+                            Làm mới
+                        </button>
+                    </div>
+                </div>
+
+                {/* Filters */}
+                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Cấp tổ chức
+                            </label>
+                            <select
+                                value={filters.organizationLevel}
+                                onChange={(e) => setFilters({...filters, organizationLevel: e.target.value})}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            >
+                                <option value="">Tất cả cấp</option>
+                                <option value="university">Trường</option>
+                                <option value="faculty">Khoa</option>
+                                <option value="department">Bộ môn</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Module
+                            </label>
+                            <select
+                                value={filters.module}
+                                onChange={(e) => setFilters({...filters, module: e.target.value})}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            >
+                                <option value="">Tất cả module</option>
+                                {modules.map(module => (
+                                    <option key={module.key} value={module.key}>
+                                        {module.name}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+
+                        <div></div>
+
+                        <div className="flex justify-end">
+                            <button
+                                onClick={fetchPermissionMatrix}
+                                className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                            >
+                                <Filter className="h-4 w-4 mr-2" />
+                                Lọc
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Permission Matrix */}
+                <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+                    <div className="px-6 py-4 border-b border-gray-200">
+                        <h3 className="text-lg font-medium text-gray-900">Ma trận phân quyền</h3>
+                        <p className="text-sm text-gray-500 mt-1">
+                            Nhấp vào ô để bật/tắt quyền cho nhóm người dùng
+                        </p>
+                    </div>
+
+                    <div className="overflow-x-auto">
+                        {loading ? (
+                            <div className="flex justify-center items-center py-12">
+                                <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                            </div>
+                        ) : (
+                            <table className="min-w-full">
+                                <thead className="bg-gray-50">
+                                <tr>
+                                    <th className="sticky left-0 bg-gray-50 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">
+                                        TÊN CHỨC NĂNG / TÊN MINH CHỨNG
+                                    </th>
+                                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        HIỂN THỊ
+                                    </th>
+                                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        THÊM
+                                    </th>
+                                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        SỬA
+                                    </th>
+                                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        XÓA
+                                    </th>
+                                </tr>
+                                </thead>
+                                <tbody className="bg-white divide-y divide-gray-200">
+                                {modules.map((module) => (
+                                    <tr key={module.key} className="hover:bg-gray-50">
+                                        <td className="sticky left-0 bg-white px-6 py-4 text-sm font-medium text-gray-900 border-r border-gray-200">
+                                            <div className="flex items-center">
+                                                <Users className="h-4 w-4 text-gray-400 mr-2" />
+                                                {module.name}
+                                            </div>
+                                        </td>
+                                        {actions.map((action) => (
+                                            <td key={action.key} className="px-6 py-4 text-center">
+                                                {userGroups.map((group) => {
+                                                    const hasPermission = permissionMatrix[module.key]?.[group.code]?.actions?.[action.key] || false
+                                                    return (
+                                                        <div key={group.code} className="mb-2">
+                                                            <button
+                                                                onClick={() => togglePermission(group.code, module.key, action.key)}
+                                                                className={`w-6 h-6 rounded border-2 flex items-center justify-center transition-colors ${
+                                                                    hasPermission
+                                                                        ? 'bg-blue-600 border-blue-600 text-white'
+                                                                        : 'bg-white border-gray-300 hover:border-blue-400'
+                                                                }`}
+                                                                title={`${group.name} - ${action.name}`}
+                                                            >
+                                                                {hasPermission && (
+                                                                    <CheckCircle className="h-4 w-4" />
+                                                                )}
+                                                            </button>
+                                                        </div>
+                                                    )
+                                                })}
+                                            </td>
+                                        ))}
+                                    </tr>
+                                ))}
+                                </tbody>
+                            </table>
+                        )}
+                    </div>
+                </div>
+
+                {/* Group Legend */}
+                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                    <h3 className="text-lg font-medium text-gray-900 mb-4">Chú giải nhóm người dùng</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {userGroups.map((group) => (
+                            <div key={group.code} className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                                <div className="w-4 h-4 bg-blue-600 rounded"></div>
+                                <div>
+                                    <div className="text-sm font-medium text-gray-900">
+                                        {group.name}
+                                    </div>
+                                    <div className="text-xs text-gray-500">
+                                        {group.code} • {group.organizationLevel}
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
             </div>
         </Layout>
     )

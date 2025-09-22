@@ -28,7 +28,10 @@ import {
     UserCheck,
     UserX,
     Star,
-    Briefcase
+    Briefcase,
+    MapPin,
+    Clock,
+    FileText
 } from 'lucide-react'
 
 export default function PersonnelPage() {
@@ -45,6 +48,7 @@ export default function PersonnelPage() {
     const [showEditModal, setShowEditModal] = useState(false)
     const [showDetailModal, setShowDetailModal] = useState(false)
     const [showDeleteModal, setShowDeleteModal] = useState(false)
+    const [showPositionModal, setShowPositionModal] = useState(false)
     const [currentPerson, setCurrentPerson] = useState(null)
 
     // Form state
@@ -61,7 +65,9 @@ export default function PersonnelPage() {
         workingYears: '',
         dateOfBirth: '',
         dateJoined: '',
-        isExpert: false
+        academicLevel: 'cu_nhan',
+        isExpert: false,
+        positions: []
     })
 
     // Search and filter
@@ -71,35 +77,46 @@ export default function PersonnelPage() {
         departmentId: '',
         position: '',
         status: '',
-        isExpert: ''
+        isExpert: '',
+        academicLevel: ''
     })
 
     // Pagination
     const [currentPage, setCurrentPage] = useState(1)
     const [totalPages, setTotalPages] = useState(1)
-    const [totalItems, setTotalItems] = useState(0)
-    const itemsPerPage = 10
+    const [pagination, setPagination] = useState({})
 
     // Options
     const [facultyOptions, setFacultyOptions] = useState([])
     const [departmentOptions, setDepartmentOptions] = useState([])
+    const [statistics, setStatistics] = useState({})
 
     const positions = [
-        { value: 'lecturer', label: 'Giảng viên' },
-        { value: 'senior_lecturer', label: 'Giảng viên chính' },
-        { value: 'associate_professor', label: 'Phó Giáo sư' },
-        { value: 'professor', label: 'Giáo sư' },
-        { value: 'staff', label: 'Nhân viên' },
-        { value: 'researcher', label: 'Nghiên cứu viên' }
+        { value: 'giang_vien', label: 'Giảng viên' },
+        { value: 'truong_khoa', label: 'Trưởng khoa' },
+        { value: 'pho_truong_khoa', label: 'Phó trưởng khoa' },
+        { value: 'truong_bo_mon', label: 'Trưởng bộ môn' },
+        { value: 'pho_truong_bo_mon', label: 'Phó trưởng bộ môn' },
+        { value: 'chu_nhiem_chuong_trinh', label: 'Chủ nhiệm chương trình' },
+        { value: 'giam_doc_trung_tam', label: 'Giám đốc trung tâm' },
+        { value: 'pho_giam_doc', label: 'Phó giám đốc' },
+        { value: 'thu_ky_khoa', label: 'Thư ký khoa' },
+        { value: 'chuyen_vien', label: 'Chuyên viên' },
+        { value: 'nhan_vien', label: 'Nhân viên' }
     ]
 
-    const qualificationOptions = [
-        'Tiến sĩ',
-        'Thạc sĩ',
-        'Cử nhân',
-        'Kỹ sư',
-        'Cao đẳng',
-        'Trung cấp'
+    const academicLevels = [
+        { value: 'tien_si', label: 'Tiến sĩ' },
+        { value: 'thac_si', label: 'Thạc sĩ' },
+        { value: 'cu_nhan', label: 'Cử nhân' },
+        { value: 'ky_su', label: 'Kỹ sư' },
+        { value: 'cao_dang', label: 'Cao đẳng' },
+        { value: 'trung_cap', label: 'Trung cấp' }
+    ]
+
+    const breadcrumbItems = [
+        { name: 'Dữ liệu đơn vị', href: '/unit-data' },
+        { name: 'Nhân sự', icon: Users }
     ]
 
     useEffect(() => {
@@ -111,197 +128,98 @@ export default function PersonnelPage() {
     useEffect(() => {
         if (user) {
             fetchPersonnel()
-            fetchFacultyOptions()
+            fetchOptions()
+            fetchStatistics()
         }
     }, [user, currentPage, searchQuery, filters])
-
-    useEffect(() => {
-        if (formData.facultyId) {
-            fetchDepartmentOptions(formData.facultyId)
-        } else {
-            setDepartmentOptions([])
-            setFormData(prev => ({ ...prev, departmentId: '' }))
-        }
-    }, [formData.facultyId])
-
-    const breadcrumbItems = [
-        { name: 'Dữ liệu đơn vị', href: '/unit-data' },
-        { name: 'Nhân sự', icon: Users }
-    ]
 
     const fetchPersonnel = async () => {
         try {
             setLoading(true)
-            // Mock API call
-            await new Promise(resolve => setTimeout(resolve, 800))
+            const params = new URLSearchParams({
+                page: currentPage,
+                limit: 10,
+                search: searchQuery,
+                ...filters
+            })
 
-            const mockPersonnel = [
-                {
-                    id: '1',
-                    fullName: 'TS. Nguyễn Văn A',
-                    employeeId: 'GV001',
-                    email: 'nguyenvana@cmcu.edu.vn',
-                    phoneNumber: '0123456789',
-                    position: 'associate_professor',
-                    faculty: {
-                        id: '1',
-                        name: 'Khoa Công nghệ Thông tin',
-                        code: 'CNTT'
-                    },
-                    department: {
-                        id: '1',
-                        name: 'Bộ môn Khoa học Máy tính',
-                        code: 'KHMT'
-                    },
-                    qualifications: ['Tiến sĩ', 'Thạc sĩ'],
-                    specializations: ['Trí tuệ nhân tạo', 'Học máy', 'Xử lý ngôn ngữ tự nhiên'],
-                    workingYears: 15,
-                    dateOfBirth: '1980-05-15T00:00:00Z',
-                    dateJoined: '2010-09-01T00:00:00Z',
-                    isExpert: true,
-                    status: 'active',
-                    createdAt: '2023-01-15T10:00:00Z'
-                },
-                {
-                    id: '2',
-                    fullName: 'ThS. Trần Thị B',
-                    employeeId: 'GV002',
-                    email: 'tranthib@cmcu.edu.vn',
-                    phoneNumber: '0987654321',
-                    position: 'senior_lecturer',
-                    faculty: {
-                        id: '1',
-                        name: 'Khoa Công nghệ Thông tin',
-                        code: 'CNTT'
-                    },
-                    department: {
-                        id: '2',
-                        name: 'Bộ môn Kỹ thuật Phần mềm',
-                        code: 'KTPM'
-                    },
-                    qualifications: ['Thạc sĩ'],
-                    specializations: ['Kỹ thuật phần mềm', 'Phát triển web', 'Cơ sở dữ liệu'],
-                    workingYears: 8,
-                    dateOfBirth: '1985-03-20T00:00:00Z',
-                    dateJoined: '2015-08-15T00:00:00Z',
-                    isExpert: true,
-                    status: 'active',
-                    createdAt: '2023-01-20T14:30:00Z'
-                },
-                {
-                    id: '3',
-                    fullName: 'PGS.TS. Lê Văn C',
-                    employeeId: 'GV003',
-                    email: 'levanc@cmcu.edu.vn',
-                    phoneNumber: '0123987456',
-                    position: 'professor',
-                    faculty: {
-                        id: '2',
-                        name: 'Khoa Cơ khí',
-                        code: 'CK'
-                    },
-                    department: {
-                        id: '4',
-                        name: 'Bộ môn Cơ khí Chế tạo',
-                        code: 'CKCT'
-                    },
-                    qualifications: ['Tiến sĩ', 'Thạc sĩ'],
-                    specializations: ['Cơ khí chế tạo máy', 'CAD/CAM', 'Công nghệ gia công'],
-                    workingYears: 20,
-                    dateOfBirth: '1975-07-10T00:00:00Z',
-                    dateJoined: '2005-03-01T00:00:00Z',
-                    isExpert: true,
-                    status: 'active',
-                    createdAt: '2023-01-10T09:00:00Z'
-                },
-                {
-                    id: '4',
-                    fullName: 'TS. Phạm Thị D',
-                    employeeId: 'GV004',
-                    email: 'phamthid@cmcu.edu.vn',
-                    phoneNumber: '0987123456',
-                    position: 'lecturer',
-                    faculty: {
-                        id: '3',
-                        name: 'Khoa Kinh tế',
-                        code: 'KT'
-                    },
-                    department: null,
-                    qualifications: ['Tiến sĩ'],
-                    specializations: ['Kinh tế học', 'Quản trị kinh doanh'],
-                    workingYears: 6,
-                    dateOfBirth: '1988-12-05T00:00:00Z',
-                    dateJoined: '2018-01-15T00:00:00Z',
-                    isExpert: false,
-                    status: 'active',
-                    createdAt: '2023-02-01T16:45:00Z'
-                },
-                {
-                    id: '5',
-                    fullName: 'Hoàng Văn E',
-                    employeeId: 'NV001',
-                    email: 'hoangvane@cmcu.edu.vn',
-                    phoneNumber: '0123456987',
-                    position: 'staff',
-                    faculty: {
-                        id: '1',
-                        name: 'Khoa Công nghệ Thông tin',
-                        code: 'CNTT'
-                    },
-                    department: null,
-                    qualifications: ['Cử nhân'],
-                    specializations: ['Quản trị hệ thống', 'Mạng máy tính'],
-                    workingYears: 3,
-                    dateOfBirth: '1990-09-12T00:00:00Z',
-                    dateJoined: '2021-06-01T00:00:00Z',
-                    isExpert: false,
-                    status: 'active',
-                    createdAt: '2023-03-01T11:20:00Z'
-                }
-            ]
+            const response = await fetch(`/api/users?${params}`)
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`)
+            }
+            const data = await response.json()
 
-            setPersonnel(mockPersonnel)
-            setTotalItems(mockPersonnel.length)
-            setTotalPages(Math.ceil(mockPersonnel.length / itemsPerPage))
-
+            if (data.success) {
+                setPersonnel(data.data.users)
+                setPagination(data.data.pagination)
+                setTotalPages(data.data.pagination.pages)
+            }
         } catch (error) {
-            toast.error('Lỗi tải danh sách nhân sự')
+            console.error('Lỗi tải danh sách nhân sự:', error)
+            // Set default data when API is not available
+            setPersonnel([])
+            setPagination({ current: 1, total: 0, pages: 1 })
+            setTotalPages(1)
+            if (error.message.includes('HTTP') || error.message.includes('fetch')) {
+                toast.error('Không thể kết nối đến server. Vui lòng kiểm tra backend server.')
+            } else {
+                toast.error('Lỗi tải danh sách nhân sự')
+            }
         } finally {
             setLoading(false)
         }
     }
 
-    const fetchFacultyOptions = async () => {
+    const fetchOptions = async () => {
         try {
-            // Mock API call
-            const mockFaculties = [
-                { id: '1', name: 'Khoa Công nghệ Thông tin', code: 'CNTT' },
-                { id: '2', name: 'Khoa Cơ khí', code: 'CK' },
-                { id: '3', name: 'Khoa Kinh tế', code: 'KT' }
-            ]
-            setFacultyOptions(mockFaculties)
+            const response = await fetch('/api/faculties')
+            if (response.ok) {
+                const data = await response.json()
+                if (data.success) {
+                    setFacultyOptions(data.data)
+                }
+            }
         } catch (error) {
-            console.error('Lỗi tải danh sách khoa:', error)
+            console.error('Lỗi tải options:', error)
+            // Set default options
+            setFacultyOptions([])
         }
     }
 
-    const fetchDepartmentOptions = async (facultyId) => {
+    const fetchDepartments = async (facultyId) => {
         try {
-            // Mock API call
-            const mockDepartments = {
-                '1': [
-                    { id: '1', name: 'Bộ môn Khoa học Máy tính', code: 'KHMT' },
-                    { id: '2', name: 'Bộ môn Kỹ thuật Phần mềm', code: 'KTPM' }
-                ],
-                '2': [
-                    { id: '4', name: 'Bộ môn Cơ khí Chế tạo', code: 'CKCT' },
-                    { id: '5', name: 'Bộ môn Cơ khí Động lực', code: 'CKDL' }
-                ],
-                '3': []
+            const response = await fetch(`/api/departments?facultyId=${facultyId}`)
+            if (response.ok) {
+                const data = await response.json()
+                if (data.success) {
+                    setDepartmentOptions(data.data)
+                }
             }
-            setDepartmentOptions(mockDepartments[facultyId] || [])
         } catch (error) {
             console.error('Lỗi tải danh sách bộ môn:', error)
+            setDepartmentOptions([])
+        }
+    }
+
+    const fetchStatistics = async () => {
+        try {
+            const response = await fetch('/api/users/statistics')
+            if (response.ok) {
+                const data = await response.json()
+                if (data.success) {
+                    setStatistics(data.data)
+                }
+            }
+        } catch (error) {
+            console.error('Lỗi tải thống kê:', error)
+            // Set default statistics
+            setStatistics({
+                totalUsers: 0,
+                activeUsers: 0,
+                staffUsers: 0,
+                expertUsers: 0,
+                managerUsers: 0
+            })
         }
     }
 
@@ -319,8 +237,11 @@ export default function PersonnelPage() {
             workingYears: '',
             dateOfBirth: '',
             dateJoined: '',
-            isExpert: false
+            academicLevel: 'cu_nhan',
+            isExpert: false,
+            positions: []
         })
+        setCurrentPerson(null)
         setShowCreateModal(true)
     }
 
@@ -328,84 +249,155 @@ export default function PersonnelPage() {
         setCurrentPerson(person)
         setFormData({
             fullName: person.fullName,
-            employeeId: person.employeeId,
+            employeeId: person.employeeId || '',
             email: person.email,
-            phoneNumber: person.phoneNumber,
-            position: person.position,
-            facultyId: person.faculty.id,
-            departmentId: person.department?.id || '',
-            qualifications: person.qualifications,
-            specializations: person.specializations,
-            workingYears: person.workingYears,
+            phoneNumber: person.phoneNumber || '',
+            position: person.positions?.[0]?.title || '',
+            facultyId: person.facultyId?._id || '',
+            departmentId: person.departmentId?._id || '',
+            qualifications: person.qualifications || [],
+            specializations: person.specializations || [],
+            workingYears: person.workingYears || '',
             dateOfBirth: person.dateOfBirth ? person.dateOfBirth.split('T')[0] : '',
             dateJoined: person.dateJoined ? person.dateJoined.split('T')[0] : '',
-            isExpert: person.isExpert
+            academicLevel: person.academicLevel || 'cu_nhan',
+            isExpert: person.role === 'expert',
+            positions: person.positions || []
         })
+
+        if (person.facultyId?._id) {
+            fetchDepartments(person.facultyId._id)
+        }
+
         setShowEditModal(true)
     }
 
     const handleSubmit = async (e) => {
         e.preventDefault()
         try {
-            // Mock API call
-            await new Promise(resolve => setTimeout(resolve, 1000))
+            const submitData = {
+                ...formData,
+                role: formData.isExpert ? 'expert' : 'staff',
+                positions: formData.position ? [
+                    {
+                        title: formData.position,
+                        department: formData.departmentId,
+                        isMain: true,
+                        isActive: true,
+                        startDate: formData.dateJoined || new Date()
+                    }
+                ] : []
+            }
 
+            let response, data
             if (currentPerson) {
-                toast.success('Cập nhật nhân sự thành công')
-                setShowEditModal(false)
+                // Update person
+                response = await fetch(`/api/users/${currentPerson._id}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(submitData)
+                })
+                data = await response.json()
+                if (data.success) {
+                    toast.success('Cập nhật nhân sự thành công')
+                    setShowEditModal(false)
+                }
             } else {
-                toast.success('Tạo nhân sự thành công')
-                setShowCreateModal(false)
+                // Create person
+                response = await fetch('/api/users', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(submitData)
+                })
+                data = await response.json()
+                if (data.success) {
+                    toast.success('Tạo nhân sự thành công')
+                    setShowCreateModal(false)
+                }
             }
 
             fetchPersonnel()
+            fetchStatistics()
             setCurrentPerson(null)
         } catch (error) {
+            console.error('Lỗi lưu thông tin nhân sự:', error)
             toast.error('Lỗi lưu thông tin nhân sự')
         }
     }
 
     const handleDelete = async () => {
         try {
-            // Mock API call
-            await new Promise(resolve => setTimeout(resolve, 500))
-
-            toast.success('Xóa nhân sự thành công')
-            setShowDeleteModal(false)
-            setCurrentPerson(null)
-            fetchPersonnel()
+            const response = await fetch(`/api/users/${currentPerson._id}`, {
+                method: 'DELETE'
+            })
+            const data = await response.json()
+            if (data.success) {
+                toast.success('Xóa nhân sự thành công')
+                setShowDeleteModal(false)
+                setCurrentPerson(null)
+                fetchPersonnel()
+                fetchStatistics()
+            }
         } catch (error) {
+            console.error('Lỗi xóa nhân sự:', error)
             toast.error('Lỗi xóa nhân sự')
         }
     }
 
     const handleViewDetail = async (person) => {
         try {
-            // Mock API call to get full details
-            await new Promise(resolve => setTimeout(resolve, 300))
-
-            setCurrentPerson(person)
-            setShowDetailModal(true)
+            const response = await fetch(`/api/users/${person._id}`)
+            const data = await response.json()
+            if (data.success) {
+                setCurrentPerson(data.data)
+                setShowDetailModal(true)
+            }
         } catch (error) {
+            console.error('Lỗi tải chi tiết nhân sự:', error)
             toast.error('Lỗi tải chi tiết nhân sự')
         }
     }
 
-    const filteredPersonnel = personnel.filter(person => {
-        const matchesSearch = !searchQuery ||
-            person.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            person.employeeId.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            person.email.toLowerCase().includes(searchQuery.toLowerCase())
+    const handleAddPosition = async (positionData) => {
+        try {
+            const response = await fetch(`/api/users/${currentPerson._id}/positions`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(positionData)
+            })
+            const data = await response.json()
+            if (data.success) {
+                toast.success('Thêm chức vụ thành công')
+                setShowPositionModal(false)
+                fetchPersonnel()
+            }
+        } catch (error) {
+            console.error('Lỗi thêm chức vụ:', error)
+            toast.error('Lỗi thêm chức vụ')
+        }
+    }
 
-        const matchesFaculty = !filters.facultyId || person.faculty.id === filters.facultyId
-        const matchesDepartment = !filters.departmentId || person.department?.id === filters.departmentId
-        const matchesPosition = !filters.position || person.position === filters.position
-        const matchesStatus = !filters.status || person.status === filters.status
-        const matchesIsExpert = !filters.isExpert ||
-            (filters.isExpert === 'true' ? person.isExpert : !person.isExpert)
-
-        return matchesSearch && matchesFaculty && matchesDepartment && matchesPosition && matchesStatus && matchesIsExpert
-    })
+    const handleRemovePosition = async (positionId) => {
+        try {
+            const response = await fetch(`/api/users/${currentPerson._id}/positions/${positionId}`, {
+                method: 'DELETE'
+            })
+            const data = await response.json()
+            if (data.success) {
+                toast.success('Xóa chức vụ thành công')
+                fetchPersonnel()
+            }
+        } catch (error) {
+            console.error('Lỗi xóa chức vụ:', error)
+            toast.error('Lỗi xóa chức vụ')
+        }
+    }
 
     const addQualification = () => {
         setFormData({
@@ -453,6 +445,39 @@ export default function PersonnelPage() {
         })
     }
 
+    const getPositionBadge = (position) => {
+        const positionConfig = positions.find(p => p.value === position)
+        const colors = {
+            'truong_khoa': 'bg-purple-100 text-purple-800',
+            'pho_truong_khoa': 'bg-blue-100 text-blue-800',
+            'truong_bo_mon': 'bg-green-100 text-green-800',
+            'pho_truong_bo_mon': 'bg-yellow-100 text-yellow-800',
+            'giang_vien': 'bg-gray-100 text-gray-800'
+        }
+
+        return (
+            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${colors[position] || 'bg-gray-100 text-gray-800'}`}>
+                {positionConfig?.label || position}
+            </span>
+        )
+    }
+
+    const getAcademicLevelBadge = (level) => {
+        const levelConfig = academicLevels.find(l => l.value === level)
+        const colors = {
+            'tien_si': 'bg-red-100 text-red-800',
+            'thac_si': 'bg-blue-100 text-blue-800',
+            'cu_nhan': 'bg-green-100 text-green-800',
+            'ky_su': 'bg-yellow-100 text-yellow-800'
+        }
+
+        return (
+            <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${colors[level] || 'bg-gray-100 text-gray-800'}`}>
+                {levelConfig?.label || level}
+            </span>
+        )
+    }
+
     const PersonnelForm = ({ onSubmit, onClose }) => (
         <form onSubmit={onSubmit} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -472,7 +497,7 @@ export default function PersonnelPage() {
 
                 <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Mã nhân viên *
+                        Mã nhân viên
                     </label>
                     <input
                         type="text"
@@ -480,7 +505,6 @@ export default function PersonnelPage() {
                         onChange={(e) => setFormData({...formData, employeeId: e.target.value.toUpperCase()})}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                         placeholder="Nhập mã nhân viên..."
-                        required
                     />
                 </div>
 
@@ -493,7 +517,7 @@ export default function PersonnelPage() {
                         value={formData.email}
                         onChange={(e) => setFormData({...formData, email: e.target.value})}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="email@cmcu.edu.vn"
+                        placeholder="email@cmc.edu.vn"
                         required
                     />
                 </div>
@@ -513,36 +537,22 @@ export default function PersonnelPage() {
 
                 <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Chức vụ *
-                    </label>
-                    <select
-                        value={formData.position}
-                        onChange={(e) => setFormData({...formData, position: e.target.value})}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        required
-                    >
-                        <option value="">Chọn chức vụ...</option>
-                        {positions.map(position => (
-                            <option key={position.value} value={position.value}>
-                                {position.label}
-                            </option>
-                        ))}
-                    </select>
-                </div>
-
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
                         Khoa *
                     </label>
                     <select
                         value={formData.facultyId}
-                        onChange={(e) => setFormData({...formData, facultyId: e.target.value, departmentId: ''})}
+                        onChange={(e) => {
+                            setFormData({...formData, facultyId: e.target.value, departmentId: ''})
+                            if (e.target.value) {
+                                fetchDepartments(e.target.value)
+                            }
+                        }}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                         required
                     >
                         <option value="">Chọn khoa...</option>
                         {facultyOptions.map(faculty => (
-                            <option key={faculty.id} value={faculty.id}>
+                            <option key={faculty._id} value={faculty._id}>
                                 {faculty.name}
                             </option>
                         ))}
@@ -561,8 +571,43 @@ export default function PersonnelPage() {
                     >
                         <option value="">Chọn bộ môn/ngành...</option>
                         {departmentOptions.map(dept => (
-                            <option key={dept.id} value={dept.id}>
+                            <option key={dept._id} value={dept._id}>
                                 {dept.name}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Chức vụ chính
+                    </label>
+                    <select
+                        value={formData.position}
+                        onChange={(e) => setFormData({...formData, position: e.target.value})}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                        <option value="">Chọn chức vụ...</option>
+                        {positions.map(position => (
+                            <option key={position.value} value={position.value}>
+                                {position.label}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Trình độ học vấn
+                    </label>
+                    <select
+                        value={formData.academicLevel}
+                        onChange={(e) => setFormData({...formData, academicLevel: e.target.value})}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                        {academicLevels.map(level => (
+                            <option key={level.value} value={level.value}>
+                                {level.label}
                             </option>
                         ))}
                     </select>
@@ -611,29 +656,26 @@ export default function PersonnelPage() {
             <div>
                 <div className="flex items-center justify-between mb-3">
                     <label className="block text-sm font-medium text-gray-700">
-                        Trình độ chuyên môn
+                        Bằng cấp chuyên môn
                     </label>
                     <button
                         type="button"
                         onClick={addQualification}
                         className="text-sm text-blue-600 hover:text-blue-800"
                     >
-                        + Thêm trình độ
+                        + Thêm bằng cấp
                     </button>
                 </div>
                 <div className="space-y-2">
                     {formData.qualifications.map((qualification, index) => (
                         <div key={index} className="flex items-center space-x-2">
-                            <select
+                            <input
+                                type="text"
                                 value={qualification}
                                 onChange={(e) => updateQualification(index, e.target.value)}
+                                placeholder="Nhập bằng cấp..."
                                 className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            >
-                                <option value="">Chọn trình độ...</option>
-                                {qualificationOptions.map(option => (
-                                    <option key={option} value={option}>{option}</option>
-                                ))}
-                            </select>
+                            />
                             <button
                                 type="button"
                                 onClick={() => removeQualification(index)}
@@ -691,7 +733,7 @@ export default function PersonnelPage() {
                         onChange={(e) => setFormData({...formData, isExpert: e.target.checked})}
                         className="mr-2"
                     />
-                    <span className="text-sm font-medium text-gray-700">Là chuyên gia</span>
+                    <span className="text-sm font-medium text-gray-700">Là chuyên gia đánh giá</span>
                 </label>
             </div>
 
@@ -731,6 +773,30 @@ export default function PersonnelPage() {
             breadcrumbItems={breadcrumbItems}
         >
             <div className="space-y-6">
+                {/* Backend Connection Notice */}
+                {personnel.length === 0 && !loading && (
+                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                        <div className="flex">
+                            <div className="flex-shrink-0">
+                                <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                                </svg>
+                            </div>
+                            <div className="ml-3">
+                                <h3 className="text-sm font-medium text-yellow-800">
+                                    Không thể kết nối đến Backend Server
+                                </h3>
+                                <div className="mt-2 text-sm text-yellow-700">
+                                    <p>
+                                        Vui lòng khởi động backend server tại port 5001.
+                                        Chạy lệnh: <code className="bg-yellow-100 px-2 py-1 rounded">npm start</code> hoặc <code className="bg-yellow-100 px-2 py-1 rounded">node server.js</code> trong thư mục backend.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 {/* Header */}
                 <div className="flex justify-between items-center">
                     <div>
@@ -756,6 +822,69 @@ export default function PersonnelPage() {
                     </div>
                 </div>
 
+                {/* Statistics Cards */}
+                <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
+                    <div className="bg-white rounded-lg shadow p-6">
+                        <div className="flex items-center">
+                            <div className="p-2 bg-blue-100 rounded-lg">
+                                <Users className="h-6 w-6 text-blue-600" />
+                            </div>
+                            <div className="ml-4">
+                                <p className="text-sm font-medium text-gray-500">Tổng nhân sự</p>
+                                <p className="text-2xl font-semibold text-gray-900">{statistics.totalUsers || 0}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="bg-white rounded-lg shadow p-6">
+                        <div className="flex items-center">
+                            <div className="p-2 bg-green-100 rounded-lg">
+                                <GraduationCap className="h-6 w-6 text-green-600" />
+                            </div>
+                            <div className="ml-4">
+                                <p className="text-sm font-medium text-gray-500">Giảng viên</p>
+                                <p className="text-2xl font-semibold text-gray-900">{statistics.staffUsers || 0}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="bg-white rounded-lg shadow p-6">
+                        <div className="flex items-center">
+                            <div className="p-2 bg-purple-100 rounded-lg">
+                                <Star className="h-6 w-6 text-purple-600" />
+                            </div>
+                            <div className="ml-4">
+                                <p className="text-sm font-medium text-gray-500">Chuyên gia</p>
+                                <p className="text-2xl font-semibold text-gray-900">{statistics.expertUsers || 0}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="bg-white rounded-lg shadow p-6">
+                        <div className="flex items-center">
+                            <div className="p-2 bg-orange-100 rounded-lg">
+                                <Award className="h-6 w-6 text-orange-600" />
+                            </div>
+                            <div className="ml-4">
+                                <p className="text-sm font-medium text-gray-500">Tiến sĩ</p>
+                                <p className="text-2xl font-semibold text-gray-900">0</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="bg-white rounded-lg shadow p-6">
+                        <div className="flex items-center">
+                            <div className="p-2 bg-gray-100 rounded-lg">
+                                <Briefcase className="h-6 w-6 text-gray-600" />
+                            </div>
+                            <div className="ml-4">
+                                <p className="text-sm font-medium text-gray-500">Quản lý</p>
+                                <p className="text-2xl font-semibold text-gray-900">{statistics.managerUsers || 0}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 {/* Filters */}
                 <div className="bg-white rounded-lg shadow p-6">
                     <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
@@ -778,14 +907,14 @@ export default function PersonnelPage() {
                                 onChange={(e) => {
                                     setFilters({...filters, facultyId: e.target.value, departmentId: ''})
                                     if (e.target.value) {
-                                        fetchDepartmentOptions(e.target.value)
+                                        fetchDepartments(e.target.value)
                                     }
                                 }}
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                             >
                                 <option value="">Tất cả khoa</option>
                                 {facultyOptions.map(faculty => (
-                                    <option key={faculty.id} value={faculty.id}>{faculty.name}</option>
+                                    <option key={faculty._id} value={faculty._id}>{faculty.name}</option>
                                 ))}
                             </select>
                         </div>
@@ -799,7 +928,7 @@ export default function PersonnelPage() {
                             >
                                 <option value="">Tất cả bộ môn</option>
                                 {departmentOptions.map(dept => (
-                                    <option key={dept.id} value={dept.id}>{dept.name}</option>
+                                    <option key={dept._id} value={dept._id}>{dept.name}</option>
                                 ))}
                             </select>
                         </div>
@@ -827,77 +956,6 @@ export default function PersonnelPage() {
                                 <option value="true">Chuyên gia</option>
                                 <option value="false">Không phải chuyên gia</option>
                             </select>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Statistics Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
-                    <div className="bg-white rounded-lg shadow p-6">
-                        <div className="flex items-center">
-                            <div className="p-2 bg-blue-100 rounded-lg">
-                                <Users className="h-6 w-6 text-blue-600" />
-                            </div>
-                            <div className="ml-4">
-                                <p className="text-sm font-medium text-gray-500">Tổng nhân sự</p>
-                                <p className="text-2xl font-semibold text-gray-900">{personnel.length}</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="bg-white rounded-lg shadow p-6">
-                        <div className="flex items-center">
-                            <div className="p-2 bg-green-100 rounded-lg">
-                                <GraduationCap className="h-6 w-6 text-green-600" />
-                            </div>
-                            <div className="ml-4">
-                                <p className="text-sm font-medium text-gray-500">Giảng viên</p>
-                                <p className="text-2xl font-semibold text-gray-900">
-                                    {personnel.filter(p => ['lecturer', 'senior_lecturer', 'associate_professor', 'professor'].includes(p.position)).length}
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="bg-white rounded-lg shadow p-6">
-                        <div className="flex items-center">
-                            <div className="p-2 bg-purple-100 rounded-lg">
-                                <Star className="h-6 w-6 text-purple-600" />
-                            </div>
-                            <div className="ml-4">
-                                <p className="text-sm font-medium text-gray-500">Chuyên gia</p>
-                                <p className="text-2xl font-semibold text-gray-900">
-                                    {personnel.filter(p => p.isExpert).length}
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="bg-white rounded-lg shadow p-6">
-                        <div className="flex items-center">
-                            <div className="p-2 bg-orange-100 rounded-lg">
-                                <Award className="h-6 w-6 text-orange-600" />
-                            </div>
-                            <div className="ml-4">
-                                <p className="text-sm font-medium text-gray-500">Tiến sĩ</p>
-                                <p className="text-2xl font-semibold text-gray-900">
-                                    {personnel.filter(p => p.qualifications.includes('Tiến sĩ')).length}
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="bg-white rounded-lg shadow p-6">
-                        <div className="flex items-center">
-                            <div className="p-2 bg-gray-100 rounded-lg">
-                                <Briefcase className="h-6 w-6 text-gray-600" />
-                            </div>
-                            <div className="ml-4">
-                                <p className="text-sm font-medium text-gray-500">Nhân viên</p>
-                                <p className="text-2xl font-semibold text-gray-900">
-                                    {personnel.filter(p => p.position === 'staff').length}
-                                </p>
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -940,15 +998,15 @@ export default function PersonnelPage() {
                                         </div>
                                     </td>
                                 </tr>
-                            ) : filteredPersonnel.length === 0 ? (
+                            ) : personnel.length === 0 ? (
                                 <tr>
                                     <td colSpan="7" className="px-6 py-4 text-center text-gray-500">
                                         Không có dữ liệu
                                     </td>
                                 </tr>
                             ) : (
-                                filteredPersonnel.map(person => (
-                                    <tr key={person.id} className="hover:bg-gray-50">
+                                personnel.map(person => (
+                                    <tr key={person._id} className="hover:bg-gray-50">
                                         <td className="px-6 py-4">
                                             <div className="flex items-center">
                                                 <div className="p-2 bg-blue-100 rounded-lg mr-3">
@@ -959,12 +1017,12 @@ export default function PersonnelPage() {
                                                         <div className="text-sm font-medium text-gray-900">
                                                             {person.fullName}
                                                         </div>
-                                                        {person.isExpert && (
+                                                        {person.role === 'expert' && (
                                                             <Star className="h-4 w-4 text-yellow-500 ml-2" />
                                                         )}
                                                     </div>
                                                     <div className="text-sm text-gray-500">
-                                                        {person.employeeId}
+                                                        {person.employeeId || person.email.split('@')[0]}
                                                     </div>
                                                 </div>
                                             </div>
@@ -973,44 +1031,43 @@ export default function PersonnelPage() {
                                         <td className="px-6 py-4">
                                             <div>
                                                 <div className="text-sm font-medium text-gray-900">
-                                                    {person.faculty.name}
+                                                    {person.facultyId?.name}
                                                 </div>
-                                                {person.department && (
+                                                {person.departmentId && (
                                                     <div className="text-sm text-gray-500">
-                                                        {person.department.name}
+                                                        {person.departmentId.name}
                                                     </div>
                                                 )}
                                             </div>
                                         </td>
 
                                         <td className="px-6 py-4">
-                                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                                    person.position === 'professor' ? 'bg-purple-100 text-purple-800' :
-                                                        person.position === 'associate_professor' ? 'bg-blue-100 text-blue-800' :
-                                                            person.position === 'senior_lecturer' ? 'bg-green-100 text-green-800' :
-                                                                person.position === 'lecturer' ? 'bg-yellow-100 text-yellow-800' :
-                                                                    'bg-gray-100 text-gray-800'
-                                                }`}>
-                                                    {positions.find(p => p.value === person.position)?.label}
-                                                </span>
+                                            {person.positions && person.positions.length > 0 ? (
+                                                <div className="space-y-1">
+                                                    {person.positions.slice(0, 2).map((position, index) => (
+                                                        <div key={index}>
+                                                            {getPositionBadge(position.title)}
+                                                        </div>
+                                                    ))}
+                                                    {person.positions.length > 2 && (
+                                                        <span className="text-xs text-gray-500">
+                                                            +{person.positions.length - 2} khác
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            ) : (
+                                                <span className="text-sm text-gray-500">Chưa có</span>
+                                            )}
                                         </td>
 
                                         <td className="px-6 py-4">
-                                            <div className="flex flex-wrap gap-1">
-                                                {person.qualifications.slice(0, 2).map(qualification => (
-                                                    <span
-                                                        key={qualification}
-                                                        className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800"
-                                                    >
-                                                            {qualification}
-                                                        </span>
-                                                ))}
-                                                {person.qualifications.length > 2 && (
-                                                    <span className="text-xs text-gray-500">
-                                                            +{person.qualifications.length - 2}
-                                                        </span>
-                                                )}
-                                            </div>
+                                            {getAcademicLevelBadge(person.academicLevel)}
+                                            {person.qualifications && person.qualifications.length > 0 && (
+                                                <div className="text-xs text-gray-500 mt-1">
+                                                    {person.qualifications.slice(0, 2).join(', ')}
+                                                    {person.qualifications.length > 2 && '...'}
+                                                </div>
+                                            )}
                                         </td>
 
                                         <td className="px-6 py-4">
@@ -1029,13 +1086,13 @@ export default function PersonnelPage() {
                                         </td>
 
                                         <td className="px-6 py-4">
-                                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                                    person.status === 'active'
-                                                        ? 'bg-green-100 text-green-800'
-                                                        : 'bg-red-100 text-red-800'
-                                                }`}>
-                                                    {person.status === 'active' ? 'Đang làm việc' : 'Nghỉ việc'}
-                                                </span>
+                                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                                person.status === 'active'
+                                                    ? 'bg-green-100 text-green-800'
+                                                    : 'bg-red-100 text-red-800'
+                                            }`}>
+                                                {person.status === 'active' ? 'Đang làm việc' : 'Nghỉ việc'}
+                                            </span>
                                         </td>
 
                                         <td className="px-6 py-4 text-right">
@@ -1079,8 +1136,8 @@ export default function PersonnelPage() {
                             <Pagination
                                 currentPage={currentPage}
                                 totalPages={totalPages}
-                                totalItems={totalItems}
-                                itemsPerPage={itemsPerPage}
+                                totalItems={pagination.total}
+                                itemsPerPage={10}
                                 onPageChange={setCurrentPage}
                             />
                         </div>
@@ -1127,14 +1184,14 @@ export default function PersonnelPage() {
                                 <div>
                                     <h3 className="text-lg font-semibold text-gray-900 mb-4">
                                         {currentPerson.fullName}
-                                        {currentPerson.isExpert && (
+                                        {currentPerson.role === 'expert' && (
                                             <Star className="inline h-5 w-5 text-yellow-500 ml-2" />
                                         )}
                                     </h3>
                                     <div className="space-y-3">
                                         <div>
                                             <span className="text-sm font-medium text-gray-500">Mã nhân viên:</span>
-                                            <p className="mt-1 text-sm text-gray-900">{currentPerson.employeeId}</p>
+                                            <p className="mt-1 text-sm text-gray-900">{currentPerson.employeeId || 'Chưa có'}</p>
                                         </div>
                                         <div>
                                             <span className="text-sm font-medium text-gray-500">Email:</span>
@@ -1145,10 +1202,8 @@ export default function PersonnelPage() {
                                             <p className="mt-1 text-sm text-gray-900">{currentPerson.phoneNumber || 'Chưa có'}</p>
                                         </div>
                                         <div>
-                                            <span className="text-sm font-medium text-gray-500">Chức vụ:</span>
-                                            <p className="mt-1 text-sm text-gray-900">
-                                                {positions.find(p => p.value === currentPerson.position)?.label}
-                                            </p>
+                                            <span className="text-sm font-medium text-gray-500">Trình độ:</span>
+                                            <p className="mt-1">{getAcademicLevelBadge(currentPerson.academicLevel)}</p>
                                         </div>
                                     </div>
                                 </div>
@@ -1158,77 +1213,118 @@ export default function PersonnelPage() {
                                     <div className="space-y-3">
                                         <div>
                                             <span className="text-sm font-medium text-gray-500">Khoa:</span>
-                                            <p className="mt-1 text-sm text-gray-900">{currentPerson.faculty.name}</p>
+                                            <p className="mt-1 text-sm text-gray-900">{currentPerson.facultyId?.name}</p>
                                         </div>
-                                        {currentPerson.department && (
+                                        {currentPerson.departmentId && (
                                             <div>
                                                 <span className="text-sm font-medium text-gray-500">Bộ môn/Ngành:</span>
-                                                <p className="mt-1 text-sm text-gray-900">{currentPerson.department.name}</p>
+                                                <p className="mt-1 text-sm text-gray-900">{currentPerson.departmentId.name}</p>
                                             </div>
                                         )}
                                         <div>
                                             <span className="text-sm font-medium text-gray-500">Số năm kinh nghiệm:</span>
-                                            <p className="mt-1 text-sm text-gray-900">{currentPerson.workingYears} năm</p>
+                                            <p className="mt-1 text-sm text-gray-900">{currentPerson.workingYears || 0} năm</p>
                                         </div>
-                                        <div>
-                                            <span className="text-sm font-medium text-gray-500">Ngày vào làm:</span>
-                                            <p className="mt-1 text-sm text-gray-900">
-                                                {formatDate(currentPerson.dateJoined)}
-                                            </p>
-                                        </div>
+                                        {currentPerson.dateJoined && (
+                                            <div>
+                                                <span className="text-sm font-medium text-gray-500">Ngày vào làm:</span>
+                                                <p className="mt-1 text-sm text-gray-900">
+                                                    {formatDate(currentPerson.dateJoined)}
+                                                </p>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             </div>
 
                             {/* Qualifications */}
-                            <div>
-                                <h4 className="text-lg font-semibold text-gray-900 mb-4">Trình độ chuyên môn</h4>
-                                <div className="flex flex-wrap gap-2">
-                                    {currentPerson.qualifications.map(qualification => (
-                                        <span
-                                            key={qualification}
-                                            className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800"
-                                        >
-                                            {qualification}
-                                        </span>
-                                    ))}
+                            {currentPerson.qualifications && currentPerson.qualifications.length > 0 && (
+                                <div>
+                                    <h4 className="text-lg font-semibold text-gray-900 mb-4">Bằng cấp chuyên môn</h4>
+                                    <div className="flex flex-wrap gap-2">
+                                        {currentPerson.qualifications.map((qualification, index) => (
+                                            <span
+                                                key={index}
+                                                className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800"
+                                            >
+                                                {qualification}
+                                            </span>
+                                        ))}
+                                    </div>
                                 </div>
-                            </div>
+                            )}
 
                             {/* Specializations */}
-                            <div>
-                                <h4 className="text-lg font-semibold text-gray-900 mb-4">Lĩnh vực chuyên môn</h4>
-                                <div className="flex flex-wrap gap-2">
-                                    {currentPerson.specializations.map((specialization, index) => (
-                                        <span
-                                            key={index}
-                                            className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800"
-                                        >
-                                            {specialization}
-                                        </span>
-                                    ))}
+                            {currentPerson.specializations && currentPerson.specializations.length > 0 && (
+                                <div>
+                                    <h4 className="text-lg font-semibold text-gray-900 mb-4">Lĩnh vực chuyên môn</h4>
+                                    <div className="flex flex-wrap gap-2">
+                                        {currentPerson.specializations.map((specialization, index) => (
+                                            <span
+                                                key={index}
+                                                className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800"
+                                            >
+                                                {specialization}
+                                            </span>
+                                        ))}
+                                    </div>
                                 </div>
-                            </div>
+                            )}
+
+                            {/* Positions */}
+                            {currentPerson.positions && currentPerson.positions.length > 0 && (
+                                <div>
+                                    <h4 className="text-lg font-semibold text-gray-900 mb-4">Chức vụ hiện tại</h4>
+                                    <div className="space-y-2">
+                                        {currentPerson.positions.map((position, index) => (
+                                            <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                                <div className="flex items-center space-x-3">
+                                                    {getPositionBadge(position.title)}
+                                                    {position.department && (
+                                                        <span className="text-sm text-gray-600">{position.department.name}</span>
+                                                    )}
+                                                </div>
+                                                <div className="flex items-center space-x-2">
+                                                    {position.isMain && (
+                                                        <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-yellow-100 text-yellow-800">
+                                                            Chính
+                                                        </span>
+                                                    )}
+                                                    <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${
+                                                        position.isActive
+                                                            ? 'bg-green-100 text-green-800'
+                                                            : 'bg-gray-100 text-gray-800'
+                                                    }`}>
+                                                        {position.isActive ? 'Đang giữ' : 'Đã kết thúc'}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
 
                             {/* Additional Info */}
                             <div>
                                 <h4 className="text-lg font-semibold text-gray-900 mb-4">Thông tin khác</h4>
                                 <div className="grid grid-cols-2 gap-6">
-                                    <div>
-                                        <span className="text-sm font-medium text-gray-500">Ngày sinh:</span>
-                                        <p className="mt-1 text-sm text-gray-900">
-                                            {formatDate(currentPerson.dateOfBirth)}
-                                        </p>
-                                    </div>
+                                    {currentPerson.dateOfBirth && (
+                                        <div>
+                                            <span className="text-sm font-medium text-gray-500">Ngày sinh:</span>
+                                            <p className="mt-1 text-sm text-gray-900">
+                                                {formatDate(currentPerson.dateOfBirth)}
+                                            </p>
+                                        </div>
+                                    )}
                                     <div>
                                         <span className="text-sm font-medium text-gray-500">Trạng thái chuyên gia:</span>
                                         <p className="mt-1">
                                             <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                                currentPerson.isExpert
+                                                currentPerson.role === 'expert'
                                                     ? 'bg-yellow-100 text-yellow-800'
                                                     : 'bg-gray-100 text-gray-800'
                                             }`}>
-                                                {currentPerson.isExpert ? 'Là chuyên gia' : 'Không phải chuyên gia'}
+                                                {currentPerson.role === 'expert' ? 'Là chuyên gia' : 'Không phải chuyên gia'}
                                             </span>
                                         </p>
                                     </div>

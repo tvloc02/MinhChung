@@ -94,76 +94,47 @@ export default function AssessmentProgramPage() {
     }, [user, searchQuery, selectedStatus, selectedType, currentPage])
 
     const breadcrumbItems = [
-        { name: 'Chương trình đánh giá', icon: ClipboardCheck }
+        { name: '', icon: ClipboardCheck }
     ]
 
     const fetchPrograms = async () => {
         try {
             setLoading(true)
-            // Mock API call
             await new Promise(resolve => setTimeout(resolve, 800))
 
             const mockPrograms = [
                 {
-                    id: '1',
-                    name: 'Đánh giá chất lượng giáo dục năm 2024',
-                    code: 'ASSESSMENT_2024_001',
-                    programName: 'AUN-QA 2023',
-                    organizationName: 'Đại học Nông nghiệp Hà Nội',
-                    academicYear: 2024,
-                    assessmentType: 'external',
-                    status: 'active',
+                    id: '',
+                    name: '',
+                    code: '',
+                    programName: '',
+                    organizationName: '',
+                    academicYear: 0,
+                    assessmentType: '',
+                    status: '',
                     timeline: {
-                        startDate: '2024-01-01T00:00:00Z',
-                        endDate: '2024-12-31T23:59:59Z',
-                        selfAssessmentDeadline: '2024-06-30T23:59:59Z',
-                        externalAssessmentDeadline: '2024-11-30T23:59:59Z'
-                    },
-                    progress: {
-                        overallProgress: 65,
-                        selfAssessmentProgress: 80,
-                        externalAssessmentProgress: 45,
-                        completedStandards: 8,
-                        totalStandards: 12
-                    },
-                    assignedExperts: [
-                        { expertId: '1', expertName: 'TS. Nguyễn Văn A', role: 'leader' },
-                        { expertId: '2', expertName: 'PGS. Trần Thị B', role: 'evaluator' }
-                    ],
-                    createdBy: 'Admin User',
-                    createdAt: '2024-01-01T00:00:00Z',
-                    updatedAt: '2024-12-25T10:00:00Z'
-                },
-                {
-                    id: '2',
-                    name: 'Đánh giá nội bộ chương trình đào tạo',
-                    code: 'ASSESSMENT_2024_002',
-                    programName: 'MOET 2024',
-                    organizationName: 'Đại học Nông nghiệp Hà Nội',
-                    academicYear: 2024,
-                    assessmentType: 'internal',
-                    status: 'draft',
-                    timeline: {
-                        startDate: '2024-07-01T00:00:00Z',
-                        endDate: '2024-12-31T23:59:59Z',
-                        selfAssessmentDeadline: '2024-10-31T23:59:59Z',
+                        startDate: '',
+                        endDate: '',
+                        selfAssessmentDeadline: '',
                         externalAssessmentDeadline: ''
                     },
                     progress: {
-                        overallProgress: 25,
-                        selfAssessmentProgress: 35,
+                        overallProgress: 0,
+                        selfAssessmentProgress: 0,
                         externalAssessmentProgress: 0,
-                        completedStandards: 2,
-                        totalStandards: 8
+                        completedStandards: 0,
+                        totalStandards: 0
                     },
-                    assignedExperts: [],
-                    createdBy: 'Manager User',
-                    createdAt: '2024-07-01T00:00:00Z',
-                    updatedAt: '2024-12-20T15:30:00Z'
+                    assignedExperts: [
+                        { expertId: '', expertName: '', role: '' },
+                        { expertId: '', expertName: '', role: '' }
+                    ],
+                    createdBy: '',
+                    createdAt: '',
+                    updatedAt: ''
                 }
             ]
 
-            // Apply filters
             let filteredPrograms = mockPrograms
             if (searchQuery) {
                 filteredPrograms = mockPrograms.filter(program =>
@@ -190,14 +161,13 @@ export default function AssessmentProgramPage() {
 
     const fetchFormData = async () => {
         try {
-            // Mock API calls
             const mockPrograms = [
-                { id: '1', name: 'AUN-QA 2023', code: 'AUN23' },
-                { id: '2', name: 'MOET 2024', code: 'MOET24' }
+                { id: '', name: '', code: '' },
+                { id: '', name: '', code: '' }
             ]
 
             const mockOrganizations = [
-                { id: '1', name: 'Đại học Nông nghiệp Hà Nội', code: 'VNUA' }
+                { id: '', name: '', code: '' }
             ]
 
             setBasePrograms(mockPrograms)
@@ -209,25 +179,15 @@ export default function AssessmentProgramPage() {
 
     const fetchAvailableExperts = async () => {
         try {
-            // Mock API call
             const mockExperts = [
                 {
-                    id: '1',
-                    expertCode: 'EXP001',
-                    name: 'TS. Nguyễn Văn A',
-                    specializations: ['Quản lý chất lượng', 'Đánh giá giáo dục'],
-                    availability: 'available',
-                    currentAssignments: 2,
-                    maxAssignments: 5
-                },
-                {
-                    id: '2',
-                    expertCode: 'EXP002',
-                    name: 'PGS. Trần Thị B',
-                    specializations: ['Đảm bảo chất lượng', 'Kiểm định chất lượng'],
-                    availability: 'available',
-                    currentAssignments: 1,
-                    maxAssignments: 4
+                    id: '',
+                    expertCode: '',
+                    name: '',
+                    specializations: [''],
+                    availability: '',
+                    currentAssignments: 0,
+                    maxAssignments: 0
                 }
             ]
 
@@ -285,7 +245,6 @@ export default function AssessmentProgramPage() {
 
     const handleDeleteProgram = async () => {
         try {
-            // Mock API call
             await new Promise(resolve => setTimeout(resolve, 1000))
 
             toast.success('Xóa chương trình đánh giá thành công')
@@ -370,20 +329,19 @@ export default function AssessmentProgramPage() {
 
     const openDetailModal = async (program) => {
         try {
-            // Mock API call to get full details
             await new Promise(resolve => setTimeout(resolve, 500))
 
             const mockDetails = {
                 ...program,
                 assessmentCriteria: [
-                    { standardId: '1', standardName: 'Chất lượng sinh viên', weight: 30, completed: true },
-                    { standardId: '2', standardName: 'Chất lượng giảng viên', weight: 25, completed: false }
+                    { standardId: '', standardName: '', weight: 0, completed: true },
+                    { standardId: '', standardName: '', weight: 0, completed: false }
                 ],
                 statistics: {
-                    totalEvidences: 156,
-                    approvedEvidences: 89,
-                    pendingEvidences: 45,
-                    rejectedEvidences: 22
+                    totalEvidences: 0,
+                    approvedEvidences: 0,
+                    pendingEvidences: 0,
+                    rejectedEvidences: 0
                 }
             }
 
@@ -403,7 +361,6 @@ export default function AssessmentProgramPage() {
 
     const handleAssignExpert = async () => {
         try {
-            // Mock API call
             await new Promise(resolve => setTimeout(resolve, 1000))
 
             toast.success('Phân công chuyên gia thành công')
