@@ -23,7 +23,8 @@ import {
     ChevronRight,
     Menu,
     X,
-    Network
+    Network,
+    Upload
 
 } from 'lucide-react'
 
@@ -42,6 +43,12 @@ export default function Sidebar({ open, onClose }) {
             icon: BarChart3,
             path: '/dashboard',
             active: router.pathname === '/dashboard'
+        },
+        {
+            name: 'Thêm minh chứng',
+            icon: Upload,
+            path: '/import-evidence',
+            active: router.pathname.includes('/import-evidence')
         },
         {
             name: 'Quy trình trình ký',
