@@ -94,7 +94,7 @@ export default function AssessmentProgramPage() {
     }, [user, searchQuery, selectedStatus, selectedType, currentPage])
 
     const breadcrumbItems = [
-        { name: '', icon: ClipboardCheck }
+        { name: 'Chương trình đánh giá', icon: ClipboardCheck }
     ]
 
     const fetchPrograms = async () => {
@@ -102,38 +102,7 @@ export default function AssessmentProgramPage() {
             setLoading(true)
             await new Promise(resolve => setTimeout(resolve, 800))
 
-            const mockPrograms = [
-                {
-                    id: '',
-                    name: '',
-                    code: '',
-                    programName: '',
-                    organizationName: '',
-                    academicYear: 0,
-                    assessmentType: '',
-                    status: '',
-                    timeline: {
-                        startDate: '',
-                        endDate: '',
-                        selfAssessmentDeadline: '',
-                        externalAssessmentDeadline: ''
-                    },
-                    progress: {
-                        overallProgress: 0,
-                        selfAssessmentProgress: 0,
-                        externalAssessmentProgress: 0,
-                        completedStandards: 0,
-                        totalStandards: 0
-                    },
-                    assignedExperts: [
-                        { expertId: '', expertName: '', role: '' },
-                        { expertId: '', expertName: '', role: '' }
-                    ],
-                    createdBy: '',
-                    createdAt: '',
-                    updatedAt: ''
-                }
-            ]
+
 
             let filteredPrograms = mockPrograms
             if (searchQuery) {
